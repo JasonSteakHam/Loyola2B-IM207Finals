@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Payment Processing{% endblock %}
+{% block content %}
+<div class="booking-card" style="text-align: center;">
+    <div style="margin-bottom: 20px;">
+        <div class="spinner" style="border: 5px solid #f3f3f3; border-top: 5px solid #0056a6; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+    </div>
+    
+    <h1>Processing Your Payment</h1>
+    
+    <div class="processing-message" style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <p style="font-size: 16px;">Your payment is being processed. This may take a few moments.</p>
+        <p><strong>Booking Reference:</strong> #{{ ticket.id }}</p>
+        <p><strong>Amount:</strong> ₱{{ "%.2f"|format(ticket.amount) }}</p>
+    </div>
+    
+    <p>You will receive an email confirmation once the payment is complete.</p>
+    
+    <div style="margin-top: 30px;">
+        <a href="{{ url_for('tickets') }}" class="search-btn" style="display: inline-block; width: auto; padding: 12px 30px;">Check Ticket Status</a>
+    </div>
+</div>
+
+<style>
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Ticket Details{% endblock %}
+
+{% block content %}
+<div class="booking-card">
+    <h1>Ticket Details</h1>
+    
+    <div class="ticket-info">
+        <p><strong>Reference Number:</strong> #{{ ticket.reference_number }}</p>
+        <p><strong>Passenger:</strong> {{ ticket.passenger_name }}</p>
+        <p><strong>Route:</strong> {{ ticket.route }}</p>
+        <p><strong>Trip Type:</strong> {{ ticket.trip_type|upper }}</p>
+        <p><strong>Departure:</strong> {{ ticket.departure_date }} at {{ ticket.departure_time }}</p>
+        {% if ticket.trip_type == 'round-trip' and ticket.return_date %}
+        <p><strong>Return:</strong> {{ ticket.return_date }} at {{ ticket.return_time or '06:00 PM' }}</p>
+        {% endif %}
+        <p><strong>Amount:</strong> ₱{{ "%.2f"|format(ticket.amount) }}</p>
+        <p><strong>Payment Status:</strong> 
+            <span class="status-badge status-{{ ticket.payment_status }}">
+                {{ ticket.payment_status|upper }}
+            </span>
+        </p>
+        <p><strong>Booking Date:</strong> {{ ticket.created_at.strftime('%Y-%m-%d %H:%M') if ticket.created_at else 'N/A' }}</p>
+        
+        <!-- Payment Required Section -->
+        {% if ticket.payment_status in ['pending', 'failed', 'cancelled'] %}
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 2px dashed #ddd; text-align: center;">
+            <p style="color: #856404; background: #fff3cd; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+                <strong>⚠️ Payment Required</strong><br>
+                This ticket is not yet paid. Please complete payment to confirm your booking.
+            </p>
+            <a href="{{ url_for('retry_payment', ticket_id=ticket.id) }}" class="pay-now-btn">Pay Now - ₱{{ "%.2f"|format(ticket.amount) }}</a>
+        </div>
+        {% endif %}
+        
+        <!-- Receipt Download Section for Paid Tickets -->
+        {% if ticket.payment_status == 'paid' %}
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 2px dashed #28a745; text-align: center;">
+            <h3 style="color: #28a745;">✅ Payment Complete</h3>
+            <p style="margin-bottom: 15px;">Your ticket/receipt is available for download:</p>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <a href="{{ url_for('download_receipt', ticket_id=ticket.id) }}" class="receipt-btn download-btn">
+                    <i class="fas fa-download"></i> Download PDF
+                </a>
+                <a href="{{ url_for('view_receipt', ticket_id=ticket.id) }}" target="_blank" class="receipt-btn view-btn">
+                    <i class="fas fa-eye"></i> View Ticket
+                </a>
+                <button onclick="printTicket()" class="receipt-btn print-btn">
+                    <i class="fas fa-print"></i> Print Ticket
+                </button>
+            </div>
+            <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                <i class="fas fa-info-circle"></i> Present this ticket (printed or on your phone) at the boarding gate
+            </p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div style="margin-top: 30px; text-align: center;">
+        <a href="{{ url_for('tickets') }}" class="search-btn" style="display: inline-block; width: auto; padding: 12px 30px;">Back to Tickets</a>
+        <a href="{{ url_for('home') }}" class="auth-btn" style="display: inline-block; width: auto; padding: 12px 30px;">Home</a>
+    </div>
+</div>
+
+<style>
+    .ticket-info {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+    
+    .ticket-info p {
+        margin: 10px 0;
+        font-size: 16px;
+    }
+    
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: bold;
+        display: inline-block;
+    }
+    
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-paid {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-failed {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .status-cancelled {
+        background: #e2e3e5;
+        color: #383d41;
+    }
+    
+    .status-processing {
+        background: #cce5ff;
+        color: #004085;
+    }
+    
+    .pay-now-btn {
+        display: inline-block;
+        background-color: #28a745;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 50px;
+        text-decoration: none;
+        font-size: 16px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+    
+    .pay-now-btn:hover {
+        background-color: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
+        color: white;
+    }
+    
+    .receipt-btn {
+        display: inline-block;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .download-btn {
+        background: #0056a6;
+        color: white;
+    }
+    
+    .download-btn:hover {
+        background: #003d7a;
+        transform: translateY(-2px);
+    }
+    
+    .view-btn {
+        background: #28a745;
+        color: white;
+    }
+    
+    .view-btn:hover {
+        background: #218838;
+        transform: translateY(-2px);
+    }
+    
+    .print-btn {
+        background: #fd7e14;
+        color: white;
+    }
+    
+    .print-btn:hover {
+        background: #e06b0a;
+        transform: translateY(-2px);
+    }
+    
+    .search-btn, .auth-btn {
+        text-decoration: none;
+        margin: 5px;
+    }
+    
+    .search-btn {
+        background-color: #ff6600;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    
+    .search-btn:hover {
+        background-color: #e65c00;
+    }
+    
+    .auth-btn {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    
+    .auth-btn:hover {
+        background-color: #5a6268;
+    }
+    
+    /* Print Styles */
+    @media print {
+        header, footer, .search-btn, .auth-btn, .pay-now-btn, .receipt-btn, .flash-message {
+            display: none !important;
+        }
+        
+        .booking-card {
+            margin: 0;
+            padding: 0;
+            box-shadow: none;
+            max-width: 100%;
+        }
+        
+        .ticket-info {
+            background: white;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .status-badge, .print-only {
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+        
+        body {
+            background: white;
+            padding: 20px;
+        }
+    }
+</style>
+
+<script>
+    function printTicket() {
+        // Open the view receipt URL in a new window and trigger print
+        var printWindow = window.open("{{ url_for('view_receipt', ticket_id=ticket.id) }}", '_blank');
+        printWindow.addEventListener('load', function() {
+            printWindow.print();
+        });
+    }
+</script>
+
+{% endblock %}

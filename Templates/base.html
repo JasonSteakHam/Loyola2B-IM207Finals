@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}ShippyDash{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <header>
+    <div class="logo">ShippyDash</div>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="{{ url_for('home') }}">HOME</a></li>
+        <li><a href="{{ url_for('book') }}">BOOK</a></li>
+        <li><a href="{{ url_for('tickets') }}">YOUR TICKETS</a></li>
+        <li><a href="{{ url_for('kiosk') }}"><i class="fas fa-tv"></i> KIOSK</a></li>
+        {% if session.get('user_id') %}
+          {% if session.get('is_admin') %}
+          <li><a href="{{ url_for('admin_dashboard') }}">ADMIN</a></li>
+          {% endif %}
+          <li><a href="{{ url_for('profile') }}">PROFILE</a></li>
+          <li><a href="{{ url_for('logout') }}">LOGOUT</a></li>
+        {% else %}
+          <li><a href="{{ url_for('login') }}">LOGIN</a></li>
+          <li><a href="{{ url_for('register') }}">REGISTER</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash-message flash-{{ category }}">
+            <span class="flash-icon">
+              {% if category == 'error' %}⚠️
+              {% elif category == 'success' %}✅
+              {% elif category == 'info' %}ℹ️
+              {% elif category == 'warning' %}⚠️
+              {% endif %}
+            </span>
+            <span class="flash-text">{{ message|safe }}</span>
+            <button class="flash-close" onclick="this.parentElement.style.display='none'">×</button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+  <div class="footer-grid">
+    <div class="footer-column">
+      <h3>ShippyDash In-house Ticketing and Booking System</h3>
+      <p>ShippyDash connects the Philippine Islands via FerrySafe, FerryFast, FerryConvenient ships.</p>
+      <p>We are guided by our core values:</p>
+      <p><strong>Safety‑minded | Hardworking | Innovative | Professional | Persistent | Youthful | Dependable | Accountable | Service‑oriented | Harmonious</strong></p>
+    </div>
+
+    <div class="footer-column">
+      <h4>Have a question about your booking?</h4>
+      <p>📍 ShippyDash HQ, Iskina Japan, Commerce Ave, Ayala BusinessPark, Cebu City, 6000</p>
+      <p>📞 +639999661751</p>
+      <p>📧 support@shippydash.com</p>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <p>©2026 ShippyDash. All Rights Reserved</p>
+    <p>This system was developed internally by ShippyDash IT Department</p>
+  </div>
+</footer>
+
+<style>
+  .flash-message {
+    padding: 15px 20px;
+    margin: 10px auto;
+    max-width: 1200px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    animation: slideDown 0.3s ease;
+  }
+  
+  .flash-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+  }
+  
+  .flash-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+  }
+  
+  .flash-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+  }
+  
+  .flash-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-left: 4px solid #ffc107;
+  }
+  
+  .flash-icon {
+    font-size: 20px;
+  }
+  
+  .flash-text {
+    flex: 1;
+    font-size: 14px;
+  }
+  
+  .flash-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.5;
+    padding: 0 5px;
+  }
+  
+  .flash-close:hover {
+    opacity: 1;
+  }
+  
+  /* Uniform navigation button styles - all buttons look the same */
+  .nav-links li a {
+    background: transparent;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .nav-links li a:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+  }
+  
+  /* Remove special styling for kiosk button - make it same as others */
+  .nav-links li a i {
+    font-size: 14px;
+  }
+  
+  @keyframes slideDown {
+    from {
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+</style>
+
+<script>
+  // Auto-hide flash messages after 5 seconds
+  setTimeout(function() {
+    document.querySelectorAll('.flash-message').forEach(function(msg) {
+      msg.style.display = 'none';
+    });
+  }, 5000);
+</script>
+
+</body>
+</html>

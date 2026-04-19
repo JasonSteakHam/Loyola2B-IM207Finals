@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Manage Tickets{% endblock %}
+{% block content %}
+<div class="container">
+  <h1>Manage Your Tickets</h1>
+  <p>Once your reservation is approved, you’ll receive an email confirmation. You can download your e-ticket below.</p>
+  <p>Please arrive at the port at least 2 hours before departure and bring your printed ticket.</p>
+  <p><strong>Note:</strong> Admin fees and rolling cargo fees are non-refundable.</p>
+
+  <table class="ticket-table">
+    <thead>
+      <tr>
+        <th>Booking No</th>
+        <th>Status</th>
+        <th>Route</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Amount</th>
+        <th>Payment</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ticket in tickets %}
+      <tr>
+        <td>{{ ticket.id }}</td>
+        <td>{{ ticket.status }}</td>
+        <td>{{ ticket.route }}</td>
+        <td>{{ ticket.date }}</td>
+        <td>{{ ticket.time }}</td>
+        <td>{{ ticket.amount }}</td>
+        <td>{{ ticket.payment_status }}</td>
+        <td><button class="action-btn">Choose ▼</button></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

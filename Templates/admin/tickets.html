@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Manage Tickets{% endblock %}
+{% block content %}
+<div class="admin-container">
+    <h1>Manage Tickets</h1>
+    
+    <div class="admin-card">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Ref #</th>
+                    <th>Passenger</th>
+                    <th>User Email</th>
+                    <th>Route</th>
+                    <th>Departure</th>
+                    <th>Return</th>
+                    <th>Amount</th>
+                    <th>Payment</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr>
+                    <td>{{ ticket.id }}</td>
+                    <td>{{ ticket.reference_number }}</td>
+                    <td>{{ ticket.passenger_name }}</td>
+                    <td>{{ ticket.passenger_email }}</td>
+                    <td>{{ ticket.route }}</td>
+                    <td>{{ ticket.departure_date }} {{ ticket.departure_time }}</td>
+                    <td>
+                        {% if ticket.return_date %}
+                        {{ ticket.return_date }} {{ ticket.return_time }}
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                    <td>₱{{ "%.2f"|format(ticket.amount) }}</td>
+                    <td>
+                        <span class="status-badge status-{{ ticket.payment_status }}">
+                            {{ ticket.payment_status }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ ticket.status }}">
+                            {{ ticket.status }}
+                        </span>
+                    </td>
+                    <td>{{ ticket.created_at.strftime('%Y-%m-%d') if ticket.created_at else 'N/A' }}</td>
+                    <td class="actions">
+                        <a href="{{ url_for('admin_ticket_detail', ticket_id=ticket.id) }}" class="btn-small view">Edit</a>
+                        <form method="POST" action="{{ url_for('admin_delete_ticket', ticket_id=ticket.id) }}" style="display:inline;">
+                            <button type="submit" class="btn-small danger" onclick="return confirm('Delete this ticket?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .admin-container {
+        max-width: 1400px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+    
+    .admin-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        overflow-x: auto;
+    }
+    
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1400px;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .data-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .data-table tr:hover {
+        background: #f5f5f5;
+    }
+    
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        display: inline-block;
+    }
+    
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-paid {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-failed {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .status-cancelled {
+        background: #e2e3e5;
+        color: #383d41;
+    }
+    
+    .status-processing {
+        background: #cce5ff;
+        color: #004085;
+    }
+    
+    .actions {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-small {
+        padding: 4px 8px;
+        border: none;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-small.view {
+        background: #0056a6;
+        color: white;
+    }
+    
+    .btn-small.danger {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .btn-small:hover {
+        opacity: 0.9;
+    }
+</style>
+{% endblock %}

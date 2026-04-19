@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+{% block title %}Your Tickets{% endblock %}
+{% block content %}
+<div class="booking-card">
+  <h1 style="text-align:center;">Your Tickets</h1>
+  <p class="form-instruction" style="text-align:center;">Here are your booked ferry trips.</p>
+
+  {% if tickets %}
+  <div style="overflow-x: auto;">
+    <table class="ticket-table">
+      <thead>
+        <tr>
+          <th>Reference #</th>
+          <th>Route</th>
+          <th>Departure</th>
+          <th>Return</th>
+          <th>Status</th>
+          <th>Amount</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ticket in tickets %}
+        <tr>
+          <td><span class="ref-number">{{ ticket.reference_number or 'N/A' }}</span></td>
+          <td><span class="route-info">{{ ticket.route }}</span></td>
+          <td>
+            <span class="date-info">{{ ticket.departure_date }}</span>
+            <span class="time-info">{{ ticket.departure_time }}</span>
+          </td>
+          <td>
+            {% if ticket.trip_type == 'round-trip' %}
+              <span class="date-info">{{ ticket.return_date }}</span>
+              <span class="time-info">{{ ticket.return_time or '06:00 PM' }}</span>
+            {% else %}
+              <span class="na-text">—</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="status-badge status-{{ ticket.payment_status }}">
+              {{ ticket.payment_status|upper }}
+            </span>
+          </td>
+          <td><span class="amount">₱{{ "%.2f"|format(ticket.amount) }}</span></td>
+          <td>
+            <div class="action-buttons">
+              <a href="{{ url_for('ticket_detail', ticket_id=ticket.id) }}" class="action-btn view-btn">View</a>
+              {% if ticket.payment_status in ['pending', 'failed', 'cancelled'] %}
+                <a href="{{ url_for('retry_payment', ticket_id=ticket.id) }}" class="action-btn pay-btn">Pay Now</a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="no-tickets">
+    <p>You don't have any tickets yet.</p>
+    <div style="text-align:center;">
+      <a href="{{ url_for('book') }}" class="search-btn" style="display: inline-block; width: auto; padding: 12px 40px;">Book a Trip</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <div style="text-align:center; margin-top: 30px;">
+    <a href="{{ url_for('home') }}" class="auth-btn" style="display: inline-block; width: auto; padding: 12px 30px;">Back to Home</a>
+  </div>
+</div>
+
+<style>
+  /* Table container for horizontal scroll on mobile */
+  .booking-card {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 30px;
+  }
+  
+  /* Table styling */
+  .ticket-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px; /* Adds space between rows */
+    margin: 20px 0;
+    font-size: 14px;
+  }
+  
+  /* Header styling */
+  .ticket-table thead tr {
+    background-color: #0056a6;
+  }
+  
+  .ticket-table th {
+    padding: 15px 20px;
+    text-align: left;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  
+  /* First and last header cells */
+  .ticket-table th:first-child {
+    border-radius: 8px 0 0 8px;
+    padding-left: 25px;
+  }
+  
+  .ticket-table th:last-child {
+    border-radius: 0 8px 8px 0;
+    padding-right: 25px;
+  }
+  
+  /* Body row styling */
+  .ticket-table tbody tr {
+    background-color: #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+  }
+  
+  .ticket-table tbody tr:hover {
+    box-shadow: 0 4px 12px rgba(0, 86, 166, 0.15);
+    transform: translateY(-2px);
+  }
+  
+  /* Cell styling */
+  .ticket-table td {
+    padding: 18px 20px;
+    vertical-align: middle;
+    border: none;
+  }
+  
+  /* First and last body cells */
+  .ticket-table td:first-child {
+    border-radius: 8px 0 0 8px;
+    padding-left: 25px;
+  }
+  
+  .ticket-table td:last-child {
+    border-radius: 0 8px 8px 0;
+    padding-right: 25px;
+  }
+  
+  /* Action buttons container */
+  .action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  /* Reference number styling */
+  .ref-number {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: #0056a6;
+    letter-spacing: 0.5px;
+  }
+  
+  /* Route information */
+  .route-info {
+    font-weight: 500;
+    color: #333;
+  }
+  
+  /* Date and time styling */
+  .date-info {
+    display: block;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 4px;
+  }
+  
+  .time-info {
+    display: block;
+    font-size: 12px;
+    color: #666;
+  }
+  
+  /* Amount styling */
+  .amount {
+    font-weight: 600;
+    color: #28a745;
+    font-size: 15px;
+  }
+  
+  /* N/A text styling */
+  .na-text {
+    color: #999;
+    font-style: italic;
+    font-size: 13px;
+  }
+  
+  /* Status badge */
+  .status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  
+  .status-pending {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+  }
+  
+  .status-paid {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+  
+  .status-failed {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+  
+  .status-cancelled {
+    background: #e2e3e5;
+    color: #383d41;
+    border: 1px solid #d6d8db;
+  }
+  
+  .status-processing {
+    background: #cce5ff;
+    color: #004085;
+    border: 1px solid #b8daff;
+  }
+  
+  /* Action buttons */
+  .action-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .view-btn {
+    background-color: #6c757d;
+    color: white;
+  }
+  
+  .view-btn:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+  }
+  
+  .pay-btn {
+    background-color: #28a745;
+    color: white;
+  }
+  
+  .pay-btn:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+  }
+  
+  /* No tickets message */
+  .no-tickets {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    margin: 20px 0;
+  }
+  
+  .no-tickets p {
+    color: #666;
+    font-size: 16px;
+    margin-bottom: 20px;
+  }
+  
+  /* Button styles */
+  .search-btn {
+    background-color: #ff6600;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+  }
+  
+  .search-btn:hover {
+    background-color: #e65c00;
+  }
+  
+  .auth-btn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+  }
+  
+  .auth-btn:hover {
+    background-color: #5a6268;
+  }
+  
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .booking-card {
+      padding: 15px;
+    }
+    
+    .ticket-table th,
+    .ticket-table td {
+      padding: 12px 10px;
+    }
+    
+    .ticket-table th:first-child,
+    .ticket-table td:first-child {
+      padding-left: 15px;
+    }
+    
+    .ticket-table th:last-child,
+    .ticket-table td:last-child {
+      padding-right: 15px;
+    }
+    
+    .action-buttons {
+      flex-direction: column;
+      gap: 5px;
+    }
+    
+    .action-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+      text-align: center;
+    }
+    
+    .ref-number {
+      font-size: 12px;
+    }
+    
+    .status-badge {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+  }
+  
+  /* For very small screens */
+  @media (max-width: 480px) {
+    .ticket-table {
+      font-size: 12px;
+    }
+    
+    .ticket-table th,
+    .ticket-table td {
+      padding: 10px 8px;
+    }
+    
+    .amount {
+      font-size: 13px;
+    }
+  }
+</style>
+{% endblock %}

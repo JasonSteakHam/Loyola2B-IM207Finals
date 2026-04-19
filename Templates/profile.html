@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<div class="profile-container">
+  <div class="profile-header">
+    <div class="profile-avatar">
+      <div class="avatar-circle">
+        {{ user.name[0]|upper }}
+      </div>
+    </div>
+    <div class="profile-title">
+      <h1>{{ user.name }}</h1>
+      <p class="profile-email">{{ user.email }}</p>
+      {% if user.is_admin %}
+      <span class="admin-badge">Administrator</span>
+      {% endif %}
+      {% if not user.is_active %}
+      <span class="banned-badge">Account Banned</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="profile-grid">
+    <div class="profile-card">
+      <h2><i class="fas fa-user"></i> Personal Information</h2>
+      <div class="info-row">
+        <span class="info-label">Full Name:</span>
+        <span class="info-value">{{ user.name }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Email:</span>
+        <span class="info-value">{{ user.email }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Phone:</span>
+        <span class="info-value">{{ user.phone or 'Not provided' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Address:</span>
+        <span class="info-value">{{ user.address or 'Not provided' }}</span>
+      </div>
+      <div class="info-row">
+  <span class="info-label">Member Since:</span>
+  <span class="info-value">{{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'N/A' }}</span>
+</div>
+<div class="info-row">
+  <span class="info-label">Last Login:</span>
+  <span class="info-value">{{ user.last_login.strftime('%B %d, %Y at %I:%M %p') if user.last_login else 'First login' }}</span>
+</div>
+      
+      <div class="profile-actions">
+        <a href="{{ url_for('profile_edit') }}" class="btn-primary">Edit Profile</a>
+        <a href="{{ url_for('change_password') }}" class="btn-secondary">Change Password</a>
+      </div>
+    </div>
+
+    <div class="profile-card">
+      <h2><i class="fas fa-ticket-alt"></i> Recent Tickets</h2>
+      {% if tickets %}
+        <div class="recent-tickets">
+          {% for ticket in tickets %}
+          <div class="ticket-item">
+            <div class="ticket-ref">{{ ticket.reference_number }}</div>
+            <div class="ticket-route">{{ ticket.route }}</div>
+            <div class="ticket-date">{{ ticket.departure_date }}</div>
+            <div class="ticket-status">
+              <span class="status-badge status-{{ ticket.payment_status }}">
+                {{ ticket.payment_status }}
+              </span>
+            </div>
+            <a href="{{ url_for('ticket_detail', ticket_id=ticket.id) }}" class="ticket-view">View</a>
+          </div>
+          {% endfor %}
+        </div>
+        <a href="{{ url_for('tickets') }}" class="view-all-link">View All Tickets →</a>
+      {% else %}
+        <p class="no-data">No tickets yet.</p>
+        <a href="{{ url_for('book') }}" class="btn-primary">Book a Trip</a>
+      {% endif %}
+    </div>
+
+    {% if not user.is_admin %}
+    <div class="profile-card danger-zone">
+      <h2><i class="fas fa-exclamation-triangle"></i> Danger Zone</h2>
+      <p>Once you delete your account, there is no going back. Please be certain.</p>
+      <form method="POST" action="{{ url_for('delete_account') }}" onsubmit="return confirm('Are you sure you want to delete your account? This action cannot be undone!');">
+        <button type="submit" class="btn-danger">Delete My Account</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+  .profile-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 20px;
+  }
+  
+  .profile-header {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 40px;
+    padding: 30px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  }
+  
+  .avatar-circle {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, #0056a6, #003d7a);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,86,166,0.3);
+  }
+  
+  .profile-title h1 {
+    margin: 0;
+    color: #333;
+    font-size: 32px;
+  }
+  
+  .profile-email {
+    color: #666;
+    font-size: 16px;
+    margin: 5px 0;
+  }
+  
+  .admin-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #0056a6;
+    color: white;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  
+  .banned-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #dc3545;
+    color: white;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  
+  .profile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+  }
+  
+  .profile-card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  
+  .profile-card h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+  }
+  
+  .profile-card h2 i {
+    color: #0056a6;
+  }
+  
+  .info-row {
+    display: flex;
+    margin-bottom: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .info-label {
+    width: 120px;
+    font-weight: 600;
+    color: #666;
+  }
+  
+  .info-value {
+    flex: 1;
+    color: #333;
+  }
+  
+  .profile-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  .btn-primary, .btn-secondary, .btn-danger {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s;
+  }
+  
+  .btn-primary {
+    background: #0056a6;
+    color: white;
+  }
+  
+  .btn-primary:hover {
+    background: #003d7a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,86,166,0.3);
+  }
+  
+  .btn-secondary {
+    background: #6c757d;
+    color: white;
+  }
+  
+  .btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+  }
+  
+  .btn-danger {
+    background: #dc3545;
+    color: white;
+    width: 100%;
+  }
+  
+  .btn-danger:hover {
+    background: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220,53,69,0.3);
+  }
+  
+  .recent-tickets {
+    margin-bottom: 15px;
+  }
+  
+  .ticket-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+  }
+  
+  .ticket-item:hover {
+    background: #f8f9fa;
+  }
+  
+  .ticket-ref {
+    font-family: monospace;
+    font-weight: bold;
+    color: #0056a6;
+  }
+  
+  .ticket-route {
+    color: #333;
+  }
+  
+  .ticket-date {
+    color: #666;
+  }
+  
+  .ticket-view {
+    color: #0056a6;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+  
+  .ticket-view:hover {
+    background: #e8f4fd;
+  }
+  
+  .status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  
+  .status-pending {
+    background: #fff3cd;
+    color: #856404;
+  }
+  
+  .status-paid {
+    background: #d4edda;
+    color: #155724;
+  }
+  
+  .status-failed, .status-cancelled {
+    background: #f8d7da;
+    color: #721c24;
+  }
+  
+  .status-processing {
+    background: #cce5ff;
+    color: #004085;
+  }
+  
+  .view-all-link {
+    display: inline-block;
+    margin-top: 15px;
+    color: #0056a6;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  
+  .view-all-link:hover {
+    text-decoration: underline;
+  }
+  
+  .no-data {
+    color: #999;
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .danger-zone {
+    border: 2px solid #dc3545;
+    background: #fff8f8;
+  }
+  
+  .danger-zone h2 i {
+    color: #dc3545;
+  }
+  
+  @media (max-width: 768px) {
+    .profile-header {
+      flex-direction: column;
+      text-align: center;
+    }
+    
+    .info-row {
+      flex-direction: column;
+    }
+    
+    .info-label {
+      width: 100%;
+      margin-bottom: 4px;
+    }
+    
+    .ticket-item {
+      grid-template-columns: 1fr;
+      gap: 5px;
+    }
+  }
+</style>
+{% endblock %}

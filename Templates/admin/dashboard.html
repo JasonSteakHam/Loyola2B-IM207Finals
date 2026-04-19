@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="admin-container">
+    <h1>Admin Dashboard</h1>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-details">
+                <h3>{{ total_users }}</h3>
+                <p>Total Users</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">🎫</div>
+            <div class="stat-details">
+                <h3>{{ total_tickets }}</h3>
+                <p>Total Tickets</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-details">
+                <h3>₱{{ "%.2f"|format(total_revenue) }}</h3>
+                <p>Total Revenue</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-details">
+                <h3>{{ pending_tickets }}</h3>
+                <p>Pending Tickets</p>
+            </div>
+        </div>
+
+        
+        <div class="stat-card">
+            <div class="stat-icon">🛳️</div>
+            <div class="stat-details">
+                <h3>{{ total_routes }}</h3>
+                <p>Active Routes</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">⏰</div>
+            <div class="stat-details">
+                <h3>{{ total_schedules }}</h3>
+                <p>Schedules</p>
+            </div>
+        </div>
+
+    </div>
+    
+    <div class="admin-grid">
+        <div class="admin-card">
+            <h2>Quick Actions</h2>
+            <div class="quick-actions">
+                <a href="{{ url_for('admin_routes') }}" class="action-btn">Manage Routes & Prices</a>
+                <a href="{{ url_for('admin_schedules') }}" class="action-btn">Manage Schedules</a>
+                <a href="{{ url_for('admin_dates') }}" class="action-btn">Manage Dates</a>
+                <a href="{{ url_for('admin_users') }}" class="action-btn">Manage Users</a>
+                <a href="{{ url_for('admin_tickets') }}" class="action-btn">Manage Tickets</a>
+            </div>
+        </div>
+        
+        <div class="admin-card">
+            <h2>Recent Users</h2>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Joined</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in recent_users %}
+                    <tr>
+                        <td>{{ user.name }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else 'N/A' }}</td>
+                        <td>
+                            {% if user.is_admin %}
+                            <span class="badge admin">Admin</span>
+                            {% endif %}
+                            {% if not user.is_active %}
+                            <span class="badge banned">Banned</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <a href="{{ url_for('admin_users') }}" class="view-all">View All →</a>
+        </div>
+        
+        <div class="admin-card">
+            <h2>Recent Tickets</h2>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Ref #</th>
+                        <th>Passenger</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ticket in recent_tickets %}
+                    <tr>
+                        <td>{{ ticket.reference_number }}</td>
+                        <td>{{ ticket.passenger_name }}</td>
+                        <td>₱{{ "%.2f"|format(ticket.amount) }}</td>
+                        <td>
+                            <span class="status-badge status-{{ ticket.payment_status }}">
+                                {{ ticket.payment_status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <a href="{{ url_for('admin_tickets') }}" class="view-all">View All →</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .admin-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin: 30px 0;
+    }
+    
+    .stat-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+    
+    .stat-icon {
+        font-size: 48px;
+    }
+    
+    .stat-details h3 {
+        font-size: 28px;
+        margin: 0;
+        color: #0056a6;
+    }
+    
+    .stat-details p {
+        margin: 5px 0 0;
+        color: #666;
+    }
+    
+    .admin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+    }
+    
+    .admin-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .admin-card h2 {
+        margin-top: 0;
+        color: #333;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 10px;
+    }
+    
+    .quick-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .action-btn {
+        display: block;
+        padding: 12px;
+        background: #0056a6;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        text-align: center;
+        transition: background 0.3s;
+    }
+    
+    .action-btn:hover {
+        background: #003d7a;
+    }
+    
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+    }
+    
+    .admin-table th,
+    .admin-table td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .admin-table th {
+        font-weight: 600;
+        color: #666;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    
+    .badge.admin {
+        background: #0056a6;
+        color: white;
+    }
+    
+    .badge.banned {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .view-all {
+        display: inline-block;
+        margin-top: 15px;
+        color: #0056a6;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    
+    .view-all:hover {
+        text-decoration: underline;
+    }
+    
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-paid {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-failed {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .status-cancelled {
+        background: #e2e3e5;
+        color: #383d41;
+    }
+    
+    .status-processing {
+        background: #cce5ff;
+        color: #004085;
+    }
+</style>
+{% endblock %}

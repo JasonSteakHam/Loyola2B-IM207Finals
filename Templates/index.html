@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}ShippyDash – FerrySafe. FerryFast. FerryConvenient.{% endblock %}
+
+{% block content %}
+<style>
+  /* Hero section styling - NO OPACITY/FADE */
+  .hero {
+    background: url("https://images.pexels.com/photos/13131056/pexels-photo-13131056.jpeg") no-repeat center center;
+    background-size: cover;
+    min-height: 500px;
+    height: calc(100vh - 80px); /* Full height minus header */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: white;
+    position: relative;
+  }
+  
+  .hero::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+  }
+  
+  .hero-text {
+    position: relative;
+    z-index: 1;
+  }
+  
+  .hero h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  }
+  
+  .hero p {
+    font-size: 20px;
+    margin-bottom: 30px;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
+  }
+  
+  .hero-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .hero-btn {
+    display: inline-block;
+    padding: 25px 60px;
+    font-size: 26px;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .book-btn {
+    background-color: #ffcc00;
+    color: #000;
+  }
+  
+  .book-btn:hover {
+    background-color: #e6b800;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
+  }
+  
+  .tickets-btn {
+    background-color: #0056a6;
+    color: white;
+  }
+  
+  .tickets-btn:hover {
+    background-color: #003d7a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 86, 166, 0.3);
+  }
+  
+  .container {
+    max-width: 800px;
+    margin: 60px auto;
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.15);
+    text-align: center;
+  }
+  
+  .container h2 {
+    color: #0056a6;
+    margin-bottom: 20px;
+  }
+  
+  .container p {
+    line-height: 1.6;
+    margin-bottom: 15px;
+  }
+</style>
+
+<!-- Hero section - NO FADE EFFECT -->
+<section class="hero">
+  <div class="hero-text">
+    <h1>FerrySafe. FerryFast. FerryConvenient.</h1>
+    <p>Connecting islands with safe, fast, and reliable ferry travel.</p>
+    <div class="hero-buttons">
+      <a href="{{ url_for('book') }}" class="hero-btn book-btn">Book Now</a>
+      <a href="{{ url_for('tickets') }}" class="hero-btn tickets-btn">Your Tickets</a>
+    </div>
+  </div>
+</section>
+
+<div class="container">
+  <h2>About ShippyDash</h2>
+  <p>
+    ShippyDash is a modern ferry service committed to transforming sea travel across the Philippine islands. 
+    Built on the pillars of safety, speed, and convenience, we offer a seamless booking experience, reliable schedules, and comfortable vessels designed for both passengers and cargo. 
+    Whether you're commuting between provinces or planning a coastal getaway, ShippyDash ensures your journey is smooth, secure, and on time.
+  </p>
+  <p>
+    Our mission is to connect communities and boost regional mobility by setting a new standard in ferry transportation. 
+    With a growing fleet and expanding routes, we're proud to serve as a trusted link between island destinations — empowering tourism, trade, and everyday travel.
+  </p>
+  <p>
+    At ShippyDash, we don't just move people — we move possibilities. FerrySafe. FerryFast. FerryConvenient.
+  </p>
+</div>
+{% endblock %}

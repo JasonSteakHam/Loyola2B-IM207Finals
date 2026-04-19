@@ -1,0 +1,589 @@
+{% extends "base.html" %}
+{% block title %}Book Ferry Trip{% endblock %}
+{% block content %}
+<div class="booking-form">
+  <h1>Book Your Ferry Trip</h1>
+
+  <form method="POST" id="bookingForm">
+    <!-- Trip type -->
+    <div class="trip-type">
+      <label><input type="radio" name="trip_type" value="one-way" checked onchange="updatePrice()"> One-way</label>
+      <label><input type="radio" name="trip_type" value="round-trip" onchange="updatePrice()"> Round Trip</label>
+    </div>
+
+    <p class="form-instruction">Please choose your destination.</p>
+
+    <div class="form-row">
+      <label>From:</label>
+      <select name="from" id="from" required onchange="loadSchedules(); updateDateRestrictions()">
+        <option value="">Choose</option>
+        <option value="Naval">Naval</option>
+        <option value="Cebu">Cebu</option>
+        <option value="Ormoc">Ormoc</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <label>To:</label>
+      <select name="to" id="to" required onchange="loadSchedules(); updateDateRestrictions()">
+        <option value="">Choose</option>
+        <option value="Naval">Naval</option>
+        <option value="Cebu">Cebu</option>
+        <option value="Ormoc">Ormoc</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <label>Departure Schedule:</label>
+      <select name="departure_schedule" id="departure_schedule" required onchange="updatePrice()">
+        <option value="">Select departure time</option>
+      </select>
+      <div class="schedule-info" id="departureScheduleInfo"></div>
+    </div>
+
+    <div class="form-row">
+      <label>Departure Date:</label>
+      <input type="date" name="departure_date" id="departure" required onchange="checkDateDisabled(); updateReturnRestrictions()">
+      <div id="departureDateWarning" class="date-warning" style="display: none;"></div>
+    </div>
+
+    <div class="form-row" id="returnRow" style="display: none;">
+      <label>Return Schedule:</label>
+      <select name="return_schedule" id="return_schedule">
+        <option value="">Select return time</option>
+      </select>
+      <div class="schedule-info" id="returnScheduleInfo"></div>
+    </div>
+
+    <div class="form-row" id="returnDateRow" style="display: none;">
+      <label>Return Date:</label>
+      <input type="date" name="return_date" id="return" onchange="checkReturnDateDisabled()">
+      <div id="returnDateWarning" class="date-warning" style="display: none;"></div>
+    </div>
+
+    <div class="form-row">
+      <label>Total Amount:</label>
+      <div class="amount-display" id="totalAmount">₱0.00</div>
+    </div>
+
+    <div class="payment-info">
+      <p><strong>Payment Method:</strong> PayMongo (GCash, Credit/Debit Card)</p>
+      <p class="payment-note">You will be redirected to PayMongo's secure payment page after confirmation.</p>
+    </div>
+
+    <button type="submit" class="search-btn" id="confirmBtn">Proceed to Payment</button>
+  </form>
+</div>
+
+<!-- Loading overlay for payment processing -->
+<div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
+  <div style="background: white; padding: 30px; border-radius: 10px; text-align: center;">
+    <div class="spinner" style="border: 5px solid #f3f3f3; border-top: 5px solid #0056a6; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+    <h3>Processing your payment...</h3>
+    <p>Please wait while we redirect you to PayMongo.</p>
+  </div>
+</div>
+
+<style>
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .amount-display {
+    font-size: 24px;
+    font-weight: bold;
+    color: #0056a6;
+    padding: 10px;
+    background: #f0f8ff;
+    border-radius: 6px;
+    text-align: center;
+  }
+  
+  .payment-info {
+    background: #e8f4fd;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px 0;
+    border-left: 4px solid #0056a6;
+  }
+  
+  .payment-note {
+    font-size: 14px;
+    color: #666;
+    margin-top: 5px;
+  }
+  
+  .schedule-info {
+    font-size: 12px;
+    color: #28a745;
+    margin-top: 5px;
+  }
+  
+  .error-message {
+    color: #dc3545;
+    font-size: 14px;
+    margin-top: 5px;
+  }
+  
+  .date-warning {
+    color: #856404;
+    font-size: 13px;
+    margin-top: 8px;
+    padding: 10px 15px;
+    background: #fff3cd;
+    border-radius: 6px;
+    display: inline-block;
+    width: 100%;
+    box-sizing: border-box;
+    border-left: 4px solid #ffc107;
+  }
+  
+  .date-warning i {
+    margin-right: 8px;
+  }
+  
+  .form-row input.error-input {
+    border-color: #dc3545;
+    background-color: #fff8f8;
+  }
+  
+  .form-row {
+    margin-bottom: 20px;
+  }
+  
+  .form-row label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  
+  .form-row select, .form-row input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+  }
+  
+  .form-row select:focus, .form-row input:focus {
+    outline: none;
+    border-color: #0056a6;
+  }
+  
+  .form-row input:disabled {
+    background: #f5f5f5;
+    cursor: not-allowed;
+  }
+</style>
+
+<script>
+  // Store schedules data
+  let schedulesData = {};
+  let currentPrices = { oneWay: 500, roundTrip: 900 };
+  let disabledDatesInfo = {}; // Store date with reason
+  
+  // Fetch disabled dates for the selected route
+  async function fetchDisabledDates() {
+    const from = document.getElementById('from').value;
+    const to = document.getElementById('to').value;
+    
+    if (!from || !to) return;
+    
+    try {
+      const response = await fetch(`/api/disabled-dates?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+      const data = await response.json();
+      disabledDatesInfo = data.disabled_dates_info || {};
+      
+      // Update date picker restrictions
+      updateDateRestrictions();
+    } catch (error) {
+      console.error('Error fetching disabled dates:', error);
+    }
+  }
+  
+  // Update date picker min/max and disabled dates
+  function updateDateRestrictions() {
+    const departureInput = document.getElementById('departure');
+    const returnInput = document.getElementById('return');
+    
+    if (!departureInput) return;
+    
+    // Set min date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    departureInput.min = tomorrowStr;
+    
+    // If current value is disabled, clear it and show reason
+    if (departureInput.value && isDateDisabled(departureInput.value)) {
+      const reason = getDisabledReason(departureInput.value);
+      departureInput.value = '';
+      showDateWarning('departureDateWarning', reason || 'This date is not available for booking.');
+    } else {
+      hideDateWarning('departureDateWarning');
+    }
+  }
+  
+  // Check if a specific date is disabled and get reason
+  function isDateDisabled(date) {
+    return disabledDatesInfo.hasOwnProperty(date);
+  }
+  
+  function getDisabledReason(date) {
+    return disabledDatesInfo[date] || null;
+  }
+  
+  // Check and validate departure date with reason
+  async function checkDateDisabled() {
+    const from = document.getElementById('from').value;
+    const to = document.getElementById('to').value;
+    const date = document.getElementById('departure').value;
+    const warningDiv = document.getElementById('departureDateWarning');
+    
+    if (!date) return true;
+    
+    try {
+      const response = await fetch(`/api/check-date-disabled?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${encodeURIComponent(date)}`);
+      const data = await response.json();
+      
+      if (data.disabled) {
+        const reasonText = data.reason ? `: ${data.reason}` : '';
+        const message = data.message || `This date is not available for booking${reasonText}`;
+        
+        warningDiv.innerHTML = `<i class="fas fa-calendar-times"></i> ${message}`;
+        warningDiv.style.display = 'block';
+        document.getElementById('departure').classList.add('error-input');
+        
+        // Clear the invalid date
+        document.getElementById('departure').value = '';
+        
+        // Show alert with reason
+        alert(`❌ ${message}\n\nPlease select another date.`);
+        
+        // Set to next available date
+        await setNextAvailableDate();
+        return false;
+      } else {
+        warningDiv.style.display = 'none';
+        document.getElementById('departure').classList.remove('error-input');
+        return true;
+      }
+    } catch (error) {
+      console.error('Error checking date:', error);
+      return true;
+    }
+  }
+  
+  // Check return date with reason
+  async function checkReturnDateDisabled() {
+    const from = document.getElementById('from').value;
+    const to = document.getElementById('to').value;
+    const date = document.getElementById('return').value;
+    const warningDiv = document.getElementById('returnDateWarning');
+    
+    if (!date) return true;
+    
+    try {
+      const response = await fetch(`/api/check-date-disabled?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${encodeURIComponent(date)}`);
+      const data = await response.json();
+      
+      if (data.disabled) {
+        const reasonText = data.reason ? `: ${data.reason}` : '';
+        const message = data.message || `This return date is not available${reasonText}`;
+        
+        warningDiv.innerHTML = `<i class="fas fa-calendar-times"></i> ${message}`;
+        warningDiv.style.display = 'block';
+        document.getElementById('return').classList.add('error-input');
+        document.getElementById('return').value = '';
+        alert(`❌ ${message}\n\nPlease select another return date.`);
+        return false;
+      } else {
+        warningDiv.style.display = 'none';
+        document.getElementById('return').classList.remove('error-input');
+        return true;
+      }
+    } catch (error) {
+      console.error('Error checking return date:', error);
+      return true;
+    }
+  }
+  
+  // Set to next available date
+  async function setNextAvailableDate() {
+    const from = document.getElementById('from').value;
+    const to = document.getElementById('to').value;
+    const dateInput = document.getElementById('departure');
+    
+    let checkDate = new Date();
+    checkDate.setDate(checkDate.getDate() + 1);
+    
+    let found = false;
+    let attempts = 0;
+    const maxAttempts = 60;
+    
+    while (!found && attempts < maxAttempts) {
+      const dateStr = checkDate.toISOString().split('T')[0];
+      
+      try {
+        const response = await fetch(`/api/check-date-disabled?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${encodeURIComponent(dateStr)}`);
+        const data = await response.json();
+        
+        if (!data.disabled) {
+          dateInput.value = dateStr;
+          found = true;
+          break;
+        }
+      } catch (error) {
+        console.error('Error checking date:', error);
+      }
+      
+      checkDate.setDate(checkDate.getDate() + 1);
+      attempts++;
+    }
+    
+    if (!found) {
+      alert('No available dates found in the next 60 days. Please contact support.');
+    }
+  }
+  
+  // Update return date restrictions based on departure date
+  function updateReturnRestrictions() {
+    const departureDate = document.getElementById('departure').value;
+    const returnInput = document.getElementById('return');
+    
+    if (departureDate && returnInput) {
+      const nextDay = new Date(departureDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      returnInput.min = nextDay.toISOString().split('T')[0];
+    }
+  }
+  
+  function showDateWarning(elementId, message) {
+    const warningDiv = document.getElementById(elementId);
+    if (warningDiv) {
+      warningDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+      warningDiv.style.display = 'block';
+    }
+  }
+  
+  function hideDateWarning(elementId) {
+    const warningDiv = document.getElementById(elementId);
+    if (warningDiv) {
+      warningDiv.style.display = 'none';
+    }
+  }
+  
+  // Load schedules based on route
+  async function loadSchedules() {
+    const from = document.getElementById('from').value;
+    const to = document.getElementById('to').value;
+    const departureSelect = document.getElementById('departure_schedule');
+    const returnSelect = document.getElementById('return_schedule');
+    const departureInfo = document.getElementById('departureScheduleInfo');
+    
+    // Reset selects
+    departureSelect.innerHTML = '<option value="">Select departure time</option>';
+    returnSelect.innerHTML = '<option value="">Select return time</option>';
+    departureInfo.innerHTML = '';
+    
+    if (!from || !to) {
+      departureSelect.disabled = true;
+      returnSelect.disabled = true;
+      return;
+    }
+    
+    if (from === to) {
+      alert('Departure and destination cannot be the same!');
+      document.getElementById('to').value = '';
+      return;
+    }
+    
+    // Fetch disabled dates for this route
+    await fetchDisabledDates();
+    
+    departureSelect.disabled = true;
+    departureSelect.innerHTML = '<option value="">Loading schedules...</option>';
+    
+    try {
+      const response = await fetch(`/api/schedules?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+      const data = await response.json();
+      
+      if (data.error) {
+        console.error('API Error:', data.error);
+        departureSelect.innerHTML = '<option value="">No schedules available</option>';
+        departureSelect.disabled = false;
+        return;
+      }
+      
+      if (data.schedules && data.schedules.length > 0) {
+        schedulesData = data;
+        departureSelect.innerHTML = '<option value="">Select departure time</option>';
+        
+        for (const schedule of data.schedules) {
+          const vesselText = schedule.vessel_name ? ` 🚢 ${schedule.vessel_name}` : '';
+          const durationText = schedule.duration ? ` (${schedule.duration})` : '';
+          
+          departureSelect.innerHTML += `<option value="${schedule.id}" 
+            data-time="${schedule.departure_time}"
+            data-arrival="${schedule.arrival_time}"
+            data-vessel="${schedule.vessel_name || ''}"
+            data-duration="${schedule.duration || ''}">
+            ${schedule.departure_time} → ${schedule.arrival_time}${durationText}${vesselText}
+          </option>`;
+        }
+        
+        // Also load same schedules for return
+        returnSelect.innerHTML = '<option value="">Select return time</option>';
+        for (const schedule of data.schedules) {
+          const durationText = schedule.duration ? ` (${schedule.duration})` : '';
+          returnSelect.innerHTML += `<option value="${schedule.id}" 
+            data-time="${schedule.departure_time}"
+            data-arrival="${schedule.arrival_time}">
+            ${schedule.departure_time} → ${schedule.arrival_time}${durationText}
+          </option>`;
+        }
+        
+        departureSelect.disabled = false;
+        returnSelect.disabled = false;
+        
+        // Show schedule info when selected
+        departureSelect.onchange = function() {
+          const selected = departureSelect.options[departureSelect.selectedIndex];
+          if (selected.value) {
+            const arrival = selected.getAttribute('data-arrival');
+            const vessel = selected.getAttribute('data-vessel');
+            departureInfo.innerHTML = vessel ? `⏱️ Arrives at ${arrival} on ${vessel}` : `⏱️ Arrives at ${arrival}`;
+          } else {
+            departureInfo.innerHTML = '';
+          }
+          updatePrice();
+        };
+        
+      } else {
+        departureSelect.innerHTML = '<option value="">No schedules available for this route</option>';
+        departureSelect.disabled = false;
+        returnSelect.innerHTML = '<option value="">No schedules available</option>';
+        returnSelect.disabled = true;
+      }
+    } catch (error) {
+      console.error('Error loading schedules:', error);
+      departureSelect.innerHTML = '<option value="">Error loading schedules</option>';
+      departureSelect.disabled = false;
+    }
+  }
+
+  // Update price based on trip type
+  function updatePrice() {
+    const tripType = document.querySelector('input[name="trip_type"]:checked').value;
+    const totalAmount = document.getElementById('totalAmount');
+    const returnRow = document.getElementById('returnRow');
+    const returnDateRow = document.getElementById('returnDateRow');
+    const returnSchedule = document.getElementById('return_schedule');
+    const returnDate = document.getElementById('return');
+    
+    if (tripType === 'one-way') {
+      totalAmount.textContent = `₱${currentPrices.oneWay.toFixed(2)}`;
+      returnRow.style.display = 'none';
+      returnDateRow.style.display = 'none';
+      returnSchedule.required = false;
+      returnDate.required = false;
+    } else {
+      totalAmount.textContent = `₱${currentPrices.roundTrip.toFixed(2)}`;
+      returnRow.style.display = 'block';
+      returnDateRow.style.display = 'block';
+      returnSchedule.required = true;
+      returnDate.required = true;
+    }
+  }
+
+  // Validate dates
+  function validateDates() {
+    const tripType = document.querySelector('input[name="trip_type"]:checked').value;
+    const departure = document.getElementById('departure').value;
+    const returnDate = document.getElementById('return').value;
+    
+    if (!departure) {
+      alert('Please select a departure date');
+      return false;
+    }
+    
+    if (tripType === 'round-trip') {
+      if (!returnDate) {
+        alert('Please select a return date');
+        return false;
+      }
+      if (new Date(returnDate) <= new Date(departure)) {
+        alert('Return date must be after departure date!');
+        document.getElementById('return').value = '';
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Validate schedule selection
+  function validateSchedules() {
+    const departureSchedule = document.getElementById('departure_schedule').value;
+    if (!departureSchedule) {
+      alert('Please select a departure schedule');
+      return false;
+    }
+    
+    const tripType = document.querySelector('input[name="trip_type"]:checked').value;
+    if (tripType === 'round-trip') {
+      const returnSchedule = document.getElementById('return_schedule').value;
+      if (!returnSchedule) {
+        alert('Please select a return schedule');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Show loading overlay when form is submitted
+  document.getElementById('bookingForm').addEventListener('submit', function(e) {
+    if (!validateSchedules()) {
+      e.preventDefault();
+      return;
+    }
+    if (!validateDates()) {
+      e.preventDefault();
+      return;
+    }
+    
+    // Show loading overlay
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    
+    // Disable submit button to prevent double submission
+    document.getElementById('confirmBtn').disabled = true;
+    document.getElementById('confirmBtn').textContent = 'Processing...';
+  });
+
+  // Initialize on page load
+  window.onload = function() {
+    updatePrice();
+    document.getElementById('from').disabled = false;
+    document.getElementById('to').disabled = false;
+    setDefaultDates();
+  };
+
+  // Set default date to tomorrow
+  function setDefaultDates() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    
+    const departureInput = document.getElementById('departure');
+    departureInput.min = tomorrowStr;
+    departureInput.value = tomorrowStr;
+    
+    // Set return date min to day after tomorrow
+    const dayAfter = new Date(tomorrow);
+    dayAfter.setDate(dayAfter.getDate() + 1);
+    document.getElementById('return').min = dayAfter.toISOString().split('T')[0];
+  }
+</script>
+
+{% endblock %}

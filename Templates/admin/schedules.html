@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% block title %}Manage Schedules{% endblock %}
+{% block content %}
+<div class="admin-container">
+    <h1>Manage Ferry Schedules</h1>
+    
+    <!-- Add Schedule Form -->
+    <div class="admin-card" style="margin-bottom: 30px;">
+        <h2>Add New Schedule</h2>
+        <form method="POST" action="{{ url_for('admin_add_schedule') }}">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Route:</label>
+                    <select name="route_id" required>
+                        <option value="">Select Route</option>
+                        {% for route in routes %}
+                        <option value="{{ route.id }}">{{ route.origin }} → {{ route.destination }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Departure Time:</label>
+                    <input type="time" name="departure_time" required>
+                </div>
+                <div class="form-group">
+                    <label>Arrival Time:</label>
+                    <input type="time" name="arrival_time" required>
+                </div>
+                <div class="form-group">
+                    <label>Duration:</label>
+                    <input type="text" name="duration" placeholder="e.g., 2 hours">
+                </div>
+                <div class="form-group">
+                    <label>Vessel Name:</label>
+                    <input type="text" name="vessel_name" placeholder="MV Shippy 1">
+                </div>
+                <div class="form-group">
+                    <label>Days of Week:</label>
+                    <select name="days_of_week">
+                        <option value="Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday">Every Day</option>
+                        <option value="Monday,Tuesday,Wednesday,Thursday,Friday">Weekdays Only</option>
+                        <option value="Saturday,Sunday">Weekends Only</option>
+                        <option value="Monday,Wednesday,Friday">Monday, Wednesday, Friday</option>
+                        <option value="Tuesday,Thursday,Saturday">Tuesday, Thursday, Saturday</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn-primary">Add Schedule</button>
+        </form>
+    </div>
+    
+    <!-- Schedules List -->
+    <div class="admin-card">
+        <h2>Existing Schedules</h2>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Route</th>
+                    <th>Departure</th>
+                    <th>Arrival</th>
+                    <th>Duration</th>
+                    <th>Vessel</th>
+                    <th>Days</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for schedule in schedules %}
+                <tr id="schedule-row-{{ schedule.id }}">
+                    <td>{{ schedule.id }}</td>
+                    <td>{{ schedule.route.origin }} → {{ schedule.route.destination }}</td>
+                    <td class="editable" data-field="departure_time" data-id="{{ schedule.id }}">
+                        <span class="display-value">{{ schedule.departure_time }}</span>
+                        <input type="time" class="edit-input" style="display:none;" value="{{ schedule.departure_time }}">
+                    </td>
+                    <td class="editable" data-field="arrival_time" data-id="{{ schedule.id }}">
+                        <span class="display-value">{{ schedule.arrival_time }}</span>
+                        <input type="time" class="edit-input" style="display:none;" value="{{ schedule.arrival_time }}">
+                    </td>
+                    <td class="editable" data-field="duration" data-id="{{ schedule.id }}">
+                        <span class="display-value">{{ schedule.duration or '—' }}</span>
+                        <input type="text" class="edit-input" style="display:none;" value="{{ schedule.duration or '' }}" placeholder="Duration">
+                    </td>
+                    <td class="editable" data-field="vessel_name" data-id="{{ schedule.id }}">
+                        <span class="display-value">{{ schedule.vessel_name or '—' }}</span>
+                        <input type="text" class="edit-input" style="display:none;" value="{{ schedule.vessel_name or '' }}" placeholder="Vessel name">
+                    </td>
+                    <td>
+                        <span class="days-value">{{ schedule.days_of_week[:30] }}{% if schedule.days_of_week|length > 30 %}...{% endif %}</span>
+                        <select class="days-edit" style="display:none;">
+                            <option value="Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday" {% if schedule.days_of_week == 'Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday' %}selected{% endif %}>Every Day</option>
+                            <option value="Monday,Tuesday,Wednesday,Thursday,Friday" {% if schedule.days_of_week == 'Monday,Tuesday,Wednesday,Thursday,Friday' %}selected{% endif %}>Weekdays Only</option>
+                            <option value="Saturday,Sunday" {% if schedule.days_of_week == 'Saturday,Sunday' %}selected{% endif %}>Weekends Only</option>
+                            <option value="Monday,Wednesday,Friday" {% if schedule.days_of_week == 'Monday,Wednesday,Friday' %}selected{% endif %}>Monday, Wednesday, Friday</option>
+                            <option value="Tuesday,Thursday,Saturday" {% if schedule.days_of_week == 'Tuesday,Thursday,Saturday' %}selected{% endif %}>Tuesday, Thursday, Saturday</option>
+                        </select>
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ 'paid' if schedule.is_active else 'cancelled' }}">
+                            {{ 'Active' if schedule.is_active else 'Inactive' }}
+                        </span>
+                    </td>
+                    <td class="actions">
+                        <button onclick="editSchedule({ schedule,id })" class="btn-small edit">✏️ Edit</button>
+                        <button onclick="saveSchedule({ schedule,id })" class="btn-small save" style="display:none;">💾 Save</button>
+                        <button onclick="cancelScheduleEdit({ schedule,id })" class="btn-small cancel" style="display:none;">❌ Cancel</button>
+                        <button onclick="toggleScheduleStatus({ schedule,id }, { schedule,is_active,lower })" class="btn-small toggle">
+                            {% if schedule.is_active %}🔴 Deactivate{% else %}🟢 Activate{% endif %}
+                        </button>
+                        <form method="POST" action="{{ url_for('admin_delete_schedule', schedule_id=schedule.id) }}" style="display:inline;" onsubmit="return confirm('Delete this schedule?')">
+                            <button type="submit" class="btn-small danger">🗑️ Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .admin-container { max-width: 1400px; margin: 40px auto; padding: 20px; }
+    .admin-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow-x: auto; margin-bottom: 20px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
+    .form-group select, .form-group input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th, .data-table td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
+    .data-table th { background: #f8f9fa; font-weight: 600; }
+    .btn-primary { background: #0056a6; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; }
+    .btn-small { padding: 6px 12px; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; margin: 2px; }
+    .btn-small.edit { background: #0056a6; color: white; }
+    .btn-small.save { background: #28a745; color: white; }
+    .btn-small.cancel { background: #dc3545; color: white; }
+    .btn-small.toggle { background: #ffc107; color: #333; }
+    .btn-small.danger { background: #dc3545; color: white; }
+    .actions { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+    .status-badge { padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .status-paid { background: #d4edda; color: #155724; }
+    .status-cancelled { background: #f8d7da; color: #721c24; }
+    .edit-input { width: 80px; padding: 4px; }
+    .days-edit { width: 140px; padding: 4px; }
+</style>
+
+<script>
+    function editSchedule(scheduleId) {
+        const row = document.getElementById(`schedule-row-${scheduleId}`);
+        const displaySpans = row.querySelectorAll('.display-value');
+        const editInputs = row.querySelectorAll('.edit-input');
+        const daysSpan = row.querySelector('.days-value');
+        const daysSelect = row.querySelector('.days-edit');
+        const editBtn = row.querySelector('.btn-small.edit');
+        const saveBtn = row.querySelector('.btn-small.save');
+        const cancelBtn = row.querySelector('.btn-small.cancel');
+        
+        displaySpans.forEach(span => span.style.display = 'none');
+        editInputs.forEach(input => input.style.display = 'inline-block');
+        daysSpan.style.display = 'none';
+        daysSelect.style.display = 'inline-block';
+        editBtn.style.display = 'none';
+        saveBtn.style.display = 'inline-block';
+        cancelBtn.style.display = 'inline-block';
+    }
+    
+    function cancelScheduleEdit(scheduleId) {
+        const row = document.getElementById(`schedule-row-${scheduleId}`);
+        const displaySpans = row.querySelectorAll('.display-value');
+        const editInputs = row.querySelectorAll('.edit-input');
+        const daysSpan = row.querySelector('.days-value');
+        const daysSelect = row.querySelector('.days-edit');
+        const editBtn = row.querySelector('.btn-small.edit');
+        const saveBtn = row.querySelector('.btn-small.save');
+        const cancelBtn = row.querySelector('.btn-small.cancel');
+        
+        displaySpans.forEach(span => span.style.display = 'inline');
+        editInputs.forEach(input => input.style.display = 'none');
+        daysSpan.style.display = 'inline';
+        daysSelect.style.display = 'none';
+        editBtn.style.display = 'inline-block';
+        saveBtn.style.display = 'none';
+        cancelBtn.style.display = 'none';
+    }
+    
+    async function saveSchedule(scheduleId) {
+        const row = document.getElementById(`schedule-row-${scheduleId}`);
+        const departureInput = row.querySelector('[data-field="departure_time"] .edit-input');
+        const arrivalInput = row.querySelector('[data-field="arrival_time"] .edit-input');
+        const durationInput = row.querySelector('[data-field="duration"] .edit-input');
+        const vesselInput = row.querySelector('[data-field="vessel_name"] .edit-input');
+        const daysSelect = row.querySelector('.days-edit');
+        
+        const data = {
+            departure_time: departureInput.value,
+            arrival_time: arrivalInput.value,
+            duration: durationInput.value,
+            vessel_name: vesselInput.value,
+            days_of_week: daysSelect.value
+        };
+        
+        try {
+            const response = await fetch(`/admin/api/schedule/${scheduleId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                // Update display values
+                row.querySelector('[data-field="departure_time"] .display-value').textContent = data.departure_time;
+                row.querySelector('[data-field="arrival_time"] .display-value').textContent = data.arrival_time;
+                row.querySelector('[data-field="duration"] .display-value').textContent = data.duration || '—';
+                row.querySelector('[data-field="vessel_name"] .display-value').textContent = data.vessel_name || '—';
+                
+                const daysText = daysSelect.options[daysSelect.selectedIndex].text;
+                row.querySelector('.days-value').textContent = daysText;
+                
+                cancelScheduleEdit(scheduleId);
+                showNotification('Schedule updated successfully!', 'success');
+            } else {
+                showNotification('Error updating schedule', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Error updating schedule', 'error');
+        }
+    }
+    
+    async function toggleScheduleStatus(scheduleId, currentStatus) {
+        try {
+            const response = await fetch(`/admin/api/schedule/${scheduleId}/toggle`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            if (response.ok) {
+                location.reload();
+            } else {
+                showNotification('Error toggling schedule status', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Error toggling schedule status', 'error');
+        }
+    }
+    
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `flash-message flash-${type}`;
+        notification.innerHTML = `<span class="flash-text">${message}</span><button class="flash-close" onclick="this.parentElement.remove()">×</button>`;
+        document.querySelector('main').insertBefore(notification, document.querySelector('main').firstChild);
+        setTimeout(() => notification.remove(), 3000);
+    }
+</script>
+{% endblock %}

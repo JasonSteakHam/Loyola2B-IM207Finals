@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Error{% endblock %}
+{% block content %}
+<div class="booking-card" style="text-align: center;">
+    <div style="font-size: 80px; color: #dc3545; margin-bottom: 20px;">⚠️</div>
+    <h1>Oops! Something Went Wrong</h1>
+    
+    <div class="error-message" style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin: 20px 0;">
+        <p style="font-size: 18px;">{{ message | default('An unexpected error occurred. Please try again.') }}</p>
+    </div>
+    
+    <div style="margin-top: 30px;">
+        <a href="{{ url_for('home') }}" class="search-btn" style="display: inline-block; width: auto; padding: 12px 30px; margin: 5px;">Go to Homepage</a>
+        <a href="{{ url_for('book') }}" class="auth-btn" style="display: inline-block; width: auto; padding: 12px 30px; margin: 5px;">Try Booking Again</a>
+    </div>
+    
+    {% if session.get('user_id') %}
+    <div style="margin-top: 20px;">
+        <a href="{{ url_for('tickets') }}" style="color: #0056a6;">View My Tickets</a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .error-message {
+        border-left: 4px solid #dc3545;
+        text-align: left;
+    }
+    
+    .search-btn, .auth-btn {
+        text-decoration: none;
+    }
+    
+    .search-btn {
+        background-color: #0056a6;
+        color: white;
+    }
+    
+    .search-btn:hover {
+        background-color: #003d7a;
+    }
+</style>
+{% endblock %}

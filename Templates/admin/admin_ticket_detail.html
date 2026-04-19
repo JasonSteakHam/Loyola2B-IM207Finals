@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Edit Ticket{% endblock %}
+{% block content %}
+<div class="admin-container">
+    <h1>Edit Ticket #{{ ticket.reference_number }}</h1>
+    
+    <div class="admin-card">
+        <form method="POST" action="{{ url_for('admin_update_ticket', ticket_id=ticket.id) }}">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Reference Number:</label>
+                    <input type="text" value="{{ ticket.reference_number }}" disabled class="readonly-field">
+                </div>
+                
+                <div class="form-group">
+                    <label>Passenger Name:</label>
+                    <input type="text" value="{{ ticket.passenger_name }}" disabled class="readonly-field">
+                </div>
+                
+                <div class="form-group">
+                    <label>Passenger Email:</label>
+                    <input type="email" value="{{ ticket.passenger_email }}" disabled class="readonly-field">
+                </div>
+                
+                <div class="form-group">
+                    <label>Passenger Phone:</label>
+                    <input type="text" value="{{ ticket.passenger_phone or 'Not provided' }}" disabled class="readonly-field">
+                </div>
+                
+                <div class="form-group">
+                    <label>Route:</label>
+                    <input type="text" value="{{ ticket.route }}" disabled class="readonly-field">
+                </div>
+                
+                <div class="form-group">
+                    <label>Departure Date:</label>
+                    <input type="date" name="departure_date" value="{{ ticket.departure_date }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Departure Time:</label>
+                    <input type="time" name="departure_time" value="{{ ticket.departure_time }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Return Date:</label>
+                    <input type="date" name="return_date" value="{{ ticket.return_date or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label>Return Time:</label>
+                    <input type="time" name="return_time" value="{{ ticket.return_time or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label>Trip Type:</label>
+                    <select name="trip_type" disabled>
+                        <option value="one-way" {% if ticket.trip_type == 'one-way' %}selected{% endif %}>One-way</option>
+                        <option value="round-trip" {% if ticket.trip_type == 'round-trip' %}selected{% endif %}>Round Trip</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Amount (₱):</label>
+                    <input type="number" name="amount" step="0.01" value="{{ ticket.amount }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Payment Status:</label>
+                    <select name="payment_status" required>
+                        <option value="pending" {% if ticket.payment_status == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="paid" {% if ticket.payment_status == 'paid' %}selected{% endif %}>Paid</option>
+                        <option value="failed" {% if ticket.payment_status == 'failed' %}selected{% endif %}>Failed</option>
+                        <option value="cancelled" {% if ticket.payment_status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        <option value="processing" {% if ticket.payment_status == 'processing' %}selected{% endif %}>Processing</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Ticket Status:</label>
+                    <select name="status" required>
+                        <option value="active" {% if ticket.status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="cancelled" {% if ticket.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        <option value="completed" {% if ticket.status == 'completed' %}selected{% endif %}>Completed</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Seat Number:</label>
+                    <input type="text" name="seat_number" value="{{ ticket.seat_number or '' }}" placeholder="e.g., A12">
+                </div>
+                
+                <div class="form-group full-width">
+                    <label>Special Requests:</label>
+                    <textarea name="special_requests" rows="3">{{ ticket.special_requests or '' }}</textarea>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Update Ticket</button>
+                <a href="{{ url_for('admin_tickets') }}" class="btn-secondary">Back to Tickets</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .admin-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+    
+    .admin-card {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+    
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .form-group.full-width {
+        grid-column: span 2;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 10px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #0056a6;
+    }
+    
+    .readonly-field {
+        background: #f5f5f5;
+        cursor: not-allowed;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 30px;
+        justify-content: center;
+    }
+    
+    .btn-primary, .btn-secondary {
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-primary {
+        background: #0056a6;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #003d7a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,86,166,0.3);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+    
+    @media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-group.full-width {
+            grid-column: span 1;
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Payment Failed{% endblock %}
+{% block content %}
+<div class="booking-card" style="text-align: center;">
+  <div style="font-size: 80px; color: #dc3545; margin-bottom: 20px;">✗</div>
+  <h1>Payment Failed</h1>
+  <p>We couldn't process your payment. Please try again.</p>
+  <p><strong>Booking Reference:</strong> #{{ ticket.id }}</p>
+  <p>Your ticket has been saved but is pending payment.</p>
+  
+  <div style="margin-top: 30px;">
+    <a href="{{ url_for('book') }}" class="search-btn" style="display: inline-block; width: auto; padding: 15px 40px;">Try Again</a>
+    <a href="{{ url_for('tickets') }}" class="auth-btn" style="display: inline-block; width: auto; padding: 15px 40px; margin-top: 10px;">View Pending Tickets</a>
+  </div>
+</div>
+{% endblock %}

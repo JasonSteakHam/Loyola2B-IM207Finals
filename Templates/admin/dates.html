@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}Manage Disabled Dates{% endblock %}
+{% block content %}
+<div class="admin-container">
+    <h1>Manage Disabled Dates</h1>
+    <p class="info-text">Dates added here will be disabled on the booking calendar. Customers cannot book trips on disabled dates.</p>
+    
+    <!-- Add Disabled Date Form -->
+    <div class="admin-card" style="margin-bottom: 30px;">
+        <h2>Disable a Date</h2>
+        <form method="POST" action="{{ url_for('admin_add_disabled_date') }}">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Route:</label>
+                    <select name="route_id" required>
+                        <option value="">Select Route (or all routes)</option>
+                        <option value="all">🚫 ALL ROUTES</option>
+                        {% for route in routes %}
+                        <option value="{{ route.id }}">{{ route.origin }} → {{ route.destination }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="hint">Select "ALL ROUTES" to disable this date for all ferry routes</small>
+                </div>
+                <div class="form-group">
+                    <label>Date to Disable:</label>
+                    <input type="date" name="date" id="datePicker" required>
+                </div>
+                <div class="form-group">
+                    <label>Reason (Optional):</label>
+                    <input type="text" name="reason" placeholder="e.g., Maintenance, Holiday, Weather">
+                </div>
+            </div>
+            <button type="submit" class="btn-primary">🚫 Disable This Date</button>
+        </form>
+    </div>
+    
+    <!-- Disabled Dates List -->
+    <div class="admin-card">
+        <h2>Disabled Dates</h2>
+        {% if disabled_dates %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Route</th>
+                    <th>Disabled Date</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for date in disabled_dates %}
+                <tr id="date-row-{{ date.id }}">
+                    <td>{{ date.id }}</td>
+                    <td id="route-{{ date.id }}">
+                        {% if date.route_id == 0 or date.route_id == None %}
+                        <span class="badge all-routes">🚫 ALL ROUTES</span>
+                        {% else %}
+                        {{ date.route.origin }} → {{ date.route.destination }}
+                        {% endif %}
+                    </td>
+                    <td>{{ date.date }}</td>
+                    <td id="reason-cell-{{ date.id }}" class="editable-reason">
+                        <span class="reason-display" id="reason-display-{{ date.id }}">{{ date.reason or '—' }}</span>
+                        <input type="text" id="reason-input-{{ date.id }}" class="reason-input" style="display:none;" value="{{ date.reason or '' }}" placeholder="Enter reason">
+                    </td>
+                    <td>
+                        <span class="status-badge status-disabled">Disabled</span>
+                    </td>
+                    <td class="actions">
+                        <button onclick="editReason({ date,id })" id="edit-btn-{{ date.id }}" class="btn-small edit">✏️ Edit Reason</button>
+                        <button onclick="saveReason({ date,id })" id="save-btn-{{ date.id }}" class="btn-small save" style="display:none;">💾 Save</button>
+                        <button onclick="cancelEdit({ date,id })" id="cancel-btn-{{ date.id }}" class="btn-small cancel" style="display:none;">❌ Cancel</button>
+                        <form method="POST" action="{{ url_for('admin_remove_disabled_date', date_id=date.id) }}" style="display:inline;" onsubmit="return confirm('Enable this date for booking?')">
+                            <button type="submit" class="btn-small success">✅ Enable</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('admin_delete_disabled_date', date_id=date.id) }}" style="display:inline;" onsubmit="return confirm('Delete this disabled date entry?')">
+                            <button type="submit" class="btn-small danger">🗑️ Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="no-data">No disabled dates. All dates are available for booking.</p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .admin-container { max-width: 1200px; margin: 40px auto; padding: 20px; }
+    .admin-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow-x: auto; margin-bottom: 20px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
+    .form-group select, .form-group input { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; }
+    .form-group select:focus, .form-group input:focus { outline: none; border-color: #0056a6; }
+    .hint { display: block; font-size: 11px; color: #666; margin-top: 5px; }
+    .info-text { background: #e8f4fd; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #0056a6; }
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+    .data-table th { background: #f8f9fa; font-weight: 600; }
+    .btn-primary { background: #dc3545; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+    .btn-primary:hover { background: #c82333; }
+    .btn-small { padding: 6px 12px; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; margin: 2px; }
+    .btn-small.edit { background: #0056a6; color: white; }
+    .btn-small.save { background: #28a745; color: white; }
+    .btn-small.cancel { background: #dc3545; color: white; }
+    .btn-small.success { background: #28a745; color: white; }
+    .btn-small.danger { background: #dc3545; color: white; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; }
+    .status-disabled { background: #f8d7da; color: #721c24; }
+    .badge.all-routes { background: #ff6600; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
+    .no-data { text-align: center; padding: 40px; color: #999; }
+    .reason-input { 
+        width: 250px; 
+        padding: 8px 12px; 
+        border: 2px solid #0056a6; 
+        border-radius: 6px; 
+        font-size: 13px;
+    }
+    .editable-reason {
+        min-width: 250px;
+    }
+    .reason-display {
+        display: inline-block;
+        padding: 4px 0;
+    }
+</style>
+
+<script>
+    function editReason(dateId) {
+        var reasonDisplay = document.getElementById('reason-display-' + dateId);
+        var reasonInput = document.getElementById('reason-input-' + dateId);
+        var editBtn = document.getElementById('edit-btn-' + dateId);
+        var saveBtn = document.getElementById('save-btn-' + dateId);
+        var cancelBtn = document.getElementById('cancel-btn-' + dateId);
+        
+        reasonDisplay.style.display = 'none';
+        reasonInput.style.display = 'inline-block';
+        editBtn.style.display = 'none';
+        saveBtn.style.display = 'inline-block';
+        cancelBtn.style.display = 'inline-block';
+    }
+    
+    function cancelEdit(dateId) {
+        var reasonDisplay = document.getElementById('reason-display-' + dateId);
+        var reasonInput = document.getElementById('reason-input-' + dateId);
+        var editBtn = document.getElementById('edit-btn-' + dateId);
+        var saveBtn = document.getElementById('save-btn-' + dateId);
+        var cancelBtn = document.getElementById('cancel-btn-' + dateId);
+        
+        var originalValue = reasonDisplay.textContent;
+        reasonInput.value = (originalValue === '—' ? '' : originalValue);
+        
+        reasonDisplay.style.display = 'inline-block';
+        reasonInput.style.display = 'none';
+        editBtn.style.display = 'inline-block';
+        saveBtn.style.display = 'none';
+        cancelBtn.style.display = 'none';
+    }
+    
+    async function saveReason(dateId) {
+        var reasonInput = document.getElementById('reason-input-' + dateId);
+        var reasonDisplay = document.getElementById('reason-display-' + dateId);
+        var newReason = reasonInput.value.trim();
+        
+        try {
+            var response = await fetch('/admin/api/disabled-date/' + dateId + '/reason', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: newReason })
+            });
+            
+            var result = await response.json();
+            
+            if (result.success) {
+                reasonDisplay.textContent = newReason || '—';
+                cancelEdit(dateId);
+                showNotification('Reason updated successfully!', 'success');
+            } else {
+                showNotification('Error updating reason: ' + (result.error || 'Unknown error'), 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Error updating reason', 'error');
+        }
+    }
+    
+    function showNotification(message, type) {
+        var notification = document.createElement('div');
+        notification.className = 'flash-message flash-' + type;
+        notification.innerHTML = '<span class="flash-text">' + message + '</span><button class="flash-close" onclick="this.parentElement.remove()">×</button>';
+        var main = document.querySelector('main');
+        main.insertBefore(notification, main.firstChild);
+        setTimeout(function() { notification.remove(); }, 3000);
+    }
+    
+    // Set min date to tomorrow
+    var tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    var tomorrowStr = tomorrow.toISOString().split('T')[0];
+    var datePicker = document.getElementById('datePicker');
+    if (datePicker) {
+        datePicker.min = tomorrowStr;
+        datePicker.value = tomorrowStr;
+    }
+</script>
+{% endblock %}

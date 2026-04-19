@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}Manage Routes & Prices{% endblock %}
+{% block content %}
+<div class="admin-container">
+    <h1>Manage Ferry Routes & Prices</h1>
+    <p class="info-text">Changes to prices will apply to all future bookings immediately.</p>
+    
+    <div style="margin-bottom: 20px;">
+        <button onclick="showAddRouteModal()" class="btn-primary" style="display: inline-block; padding: 12px 24px;">+ Add New Route</button>
+    </div>
+    
+    <div class="admin-card">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Origin</th>
+                    <th>Destination</th>
+                    <th>One-Way Price</th>
+                    <th>Round Trip Price</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for route in routes %}
+                <tr id="route-row-{{ route.id }}">
+                    <td>{{ route.id }}</td>
+                    <td id="origin-{{ route.id }}">{{ route.origin }}</td>
+                    <td id="destination-{{ route.id }}">{{ route.destination }}</td>
+                    <td id="oneway-{{ route.id }}" class="price-cell">
+                        <span class="price-display">₱{{ "%.2f"|format(route.one_way_price) }}</span>
+                        <input type="number" id="oneway-input-{{ route.id }}" class="price-input" style="display:none;" step="0.01" value="{{ route.one_way_price }}">
+                    </td>
+                    <td id="roundtrip-{{ route.id }}" class="price-cell">
+                        <span class="price-display">₱{{ "%.2f"|format(route.round_trip_price) }}</span>
+                        <input type="number" id="roundtrip-input-{{ route.id }}" class="price-input" style="display:none;" step="0.01" value="{{ route.round_trip_price }}">
+                    </td>
+                    <td>
+                        {% if route.is_active %}
+                        <span class="status-badge status-active">Active</span>
+                        {% else %}
+                        <span class="status-badge status-inactive">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="actions">
+                        <button onclick="editPrices({ route,id })" id="edit-btn-{{ route.id }}" class="btn-small edit">💰 Edit Prices</button>
+                        <button onclick="savePrices({ route,id })" id="save-btn-{{ route.id }}" class="btn-small save" style="display:none;">💾 Save Prices</button>
+                        <button onclick="cancelPriceEdit({ route,id })" id="cancel-btn-{{ route.id }}" class="btn-small cancel" style="display:none;">❌ Cancel</button>
+                        <button onclick="toggleRouteStatus({ route,id }, { route,is_active,lower })" class="btn-small toggle">
+                            {% if route.is_active %}🔴 Deactivate{% else %}🟢 Activate{% endif %}
+                        </button>
+                        <form method="POST" action="{{ url_for('admin_delete_route', route_id=route.id) }}" style="display:inline;" onsubmit="return confirm('Delete this route? This will also delete all schedules for this route.')">
+                            <button type="submit" class="btn-small danger">🗑️ Delete</button>
+                        </form>
+                    </nav>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Route Modal -->
+<div id="addRouteModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2>Add New Route</h2>
+        <form method="POST" action="{{ url_for('admin_add_route') }}">
+            <div class="form-group">
+                <label>Origin Port:</label>
+                <select name="origin" required>
+                    <option value="">Select Origin</option>
+                    <option value="Naval">Naval</option>
+                    <option value="Cebu">Cebu</option>
+                    <option value="Ormoc">Ormoc</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Destination Port:</label>
+                <select name="destination" required>
+                    <option value="">Select Destination</option>
+                    <option value="Naval">Naval</option>
+                    <option value="Cebu">Cebu</option>
+                    <option value="Ormoc">Ormoc</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>One-Way Price (₱):</label>
+                <input type="number" name="one_way_price" step="0.01" value="500" required>
+            </div>
+            <div class="form-group">
+                <label>Round Trip Price (₱):</label>
+                <input type="number" name="round_trip_price" step="0.01" value="900" required>
+            </div>
+            <button type="submit" class="btn-primary">Add Route</button>
+        </form>
+    </div>
+</div>
+
+<style>
+    .admin-container { max-width: 1400px; margin: 40px auto; padding: 20px; }
+    .admin-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow-x: auto; }
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+    .data-table th { background: #f8f9fa; font-weight: 600; }
+    .info-text { background: #e8f4fd; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #0056a6; }
+    
+    .btn-primary { background: #0056a6; color: white; text-decoration: none; border-radius: 8px; padding: 12px 24px; border: none; cursor: pointer; }
+    .btn-primary:hover { background: #003d7a; }
+    
+    .btn-small { padding: 6px 12px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; margin: 2px; }
+    .btn-small.edit { background: #0056a6; color: white; }
+    .btn-small.save { background: #28a745; color: white; }
+    .btn-small.cancel { background: #dc3545; color: white; }
+    .btn-small.toggle { background: #ffc107; color: #333; }
+    .btn-small.danger { background: #dc3545; color: white; }
+    
+    .actions { display: flex; gap: 5px; flex-wrap: wrap; }
+    
+    .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+    .status-active { background: #d4edda; color: #155724; }
+    .status-inactive { background: #f8d7da; color: #721c24; }
+    
+    .price-cell { min-width: 120px; }
+    .price-display { display: inline-block; padding: 4px 0; }
+    .price-input { width: 100px; padding: 6px; border: 2px solid #0056a6; border-radius: 4px; font-size: 13px; }
+    
+    /* Modal Styles */
+    .modal { position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+    .modal-content { background-color: white; margin: 10% auto; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px; position: relative; }
+    .close { position: absolute; right: 20px; top: 10px; font-size: 28px; cursor: pointer; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+    .form-group select, .form-group input { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; }
+</style>
+
+<script>
+    function editPrices(routeId) {
+        var onewayDisplay = document.querySelector('#oneway-' + routeId + ' .price-display');
+        var onewayInput = document.getElementById('oneway-input-' + routeId);
+        var roundtripDisplay = document.querySelector('#roundtrip-' + routeId + ' .price-display');
+        var roundtripInput = document.getElementById('roundtrip-input-' + routeId);
+        var editBtn = document.getElementById('edit-btn-' + routeId);
+        var saveBtn = document.getElementById('save-btn-' + routeId);
+        var cancelBtn = document.getElementById('cancel-btn-' + routeId);
+        
+        onewayDisplay.style.display = 'none';
+        onewayInput.style.display = 'inline-block';
+        roundtripDisplay.style.display = 'none';
+        roundtripInput.style.display = 'inline-block';
+        editBtn.style.display = 'none';
+        saveBtn.style.display = 'inline-block';
+        cancelBtn.style.display = 'inline-block';
+    }
+    
+    function cancelPriceEdit(routeId) {
+        var onewayDisplay = document.querySelector('#oneway-' + routeId + ' .price-display');
+        var onewayInput = document.getElementById('oneway-input-' + routeId);
+        var roundtripDisplay = document.querySelector('#roundtrip-' + routeId + ' .price-display');
+        var roundtripInput = document.getElementById('roundtrip-input-' + routeId);
+        var editBtn = document.getElementById('edit-btn-' + routeId);
+        var saveBtn = document.getElementById('save-btn-' + routeId);
+        var cancelBtn = document.getElementById('cancel-btn-' + routeId);
+        
+        // Reset inputs to original values
+        var onewayText = onewayDisplay.textContent.replace('₱', '');
+        var roundtripText = roundtripDisplay.textContent.replace('₱', '');
+        onewayInput.value = parseFloat(onewayText);
+        roundtripInput.value = parseFloat(roundtripText);
+        
+        onewayDisplay.style.display = 'inline-block';
+        onewayInput.style.display = 'none';
+        roundtripDisplay.style.display = 'inline-block';
+        roundtripInput.style.display = 'none';
+        editBtn.style.display = 'inline-block';
+        saveBtn.style.display = 'none';
+        cancelBtn.style.display = 'none';
+    }
+    
+    async function savePrices(routeId) {
+        var onewayInput = document.getElementById('oneway-input-' + routeId);
+        var roundtripInput = document.getElementById('roundtrip-input-' + routeId);
+        var onewayDisplay = document.querySelector('#oneway-' + routeId + ' .price-display');
+        var roundtripDisplay = document.querySelector('#roundtrip-' + routeId + ' .price-display');
+        
+        var oneWayPrice = parseFloat(onewayInput.value);
+        var roundTripPrice = parseFloat(roundtripInput.value);
+        
+        if (isNaN(oneWayPrice) || oneWayPrice < 0) {
+            showNotification('Please enter a valid one-way price', 'error');
+            return;
+        }
+        
+        if (isNaN(roundTripPrice) || roundTripPrice < 0) {
+            showNotification('Please enter a valid round trip price', 'error');
+            return;
+        }
+        
+        var data = {
+            one_way_price: oneWayPrice,
+            round_trip_price: roundTripPrice
+        };
+        
+        try {
+            var response = await fetch('/admin/api/route/' + routeId + '/prices', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            var result = await response.json();
+            
+            if (result.success) {
+                // Update display values
+                onewayDisplay.textContent = '₱' + oneWayPrice.toFixed(2);
+                roundtripDisplay.textContent = '₱' + roundTripPrice.toFixed(2);
+                
+                cancelPriceEdit(routeId);
+                showNotification('Prices updated successfully! New prices will apply to future bookings.', 'success');
+            } else {
+                showNotification('Error updating prices: ' + (result.error || 'Unknown error'), 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Error updating prices', 'error');
+        }
+    }
+    
+    async function toggleRouteStatus(routeId, currentStatus) {
+        try {
+            var response = await fetch('/admin/api/route/' + routeId + '/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            if (response.ok) {
+                location.reload();
+            } else {
+                showNotification('Error toggling route status', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Error toggling route status', 'error');
+        }
+    }
+    
+    function showAddRouteModal() {
+        document.getElementById('addRouteModal').style.display = 'block';
+    }
+    
+    function closeModal() {
+        document.getElementById('addRouteModal').style.display = 'none';
+    }
+    
+    function showNotification(message, type) {
+        var notification = document.createElement('div');
+        notification.className = 'flash-message flash-' + type;
+        notification.innerHTML = '<span class="flash-text">' + message + '</span><button class="flash-close" onclick="this.parentElement.remove()">×</button>';
+        var main = document.querySelector('main');
+        main.insertBefore(notification, main.firstChild);
+        setTimeout(function() { notification.remove(); }, 4000);
+    }
+    
+    window.onclick = function(event) {
+        var modal = document.getElementById('addRouteModal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% block title %}User Details{% endblock %}
+{% block content %}
+<div class="admin-container">
+    <div class="profile-header">
+        <div class="profile-avatar">
+            <div class="avatar-circle">
+                {{ user.name[0]|upper }}
+            </div>
+        </div>
+        <div class="profile-title">
+            <h1>{{ user.name }}</h1>
+            <p class="profile-email">{{ user.email }}</p>
+            {% if user.is_admin %}
+            <span class="admin-badge">Administrator</span>
+            {% endif %}
+            {% if not user.is_active %}
+            <span class="banned-badge">Account Banned</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="profile-grid">
+        <div class="profile-card">
+            <h2>User Information</h2>
+            <div class="info-row">
+                <span class="info-label">User ID:</span>
+                <span class="info-value">{{ user.id }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Name:</span>
+                <span class="info-value">{{ user.name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value">{{ user.email }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Phone:</span>
+                <span class="info-value">{{ user.phone or 'Not provided' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Address:</span>
+                <span class="info-value">{{ user.address or 'Not provided' }}</span>
+            </div>
+            <div class="info-row">
+  <span class="info-label">Member Since:</span>
+  <span class="info-value">{{ user.created_at.strftime('%B %d, %Y at %I:%M %p') if user.created_at else 'N/A' }}</span>
+</div>
+<div class="info-row">
+  <span class="info-label">Last Login:</span>
+  <span class="info-value">{{ user.last_login.strftime('%B %d, %Y at %I:%M %p') if user.last_login else 'Never' }}</span>
+</div>
+        </div>
+
+        <div class="profile-card">
+            <h2>User Statistics</h2>
+            <div class="info-row">
+                <span class="info-label">Total Tickets:</span>
+                <span class="info-value">{{ tickets|length }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Total Spent:</span>
+                <span class="info-value">₱{{ "%.2f"|format(tickets|selectattr('payment_status', 'equalto', 'paid')|sum(attribute='amount')) }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Paid Tickets:</span>
+                <span class="info-value">{{ tickets|selectattr('payment_status', 'equalto', 'paid')|list|length }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Pending Tickets:</span>
+                <span class="info-value">{{ tickets|selectattr('payment_status', 'equalto', 'pending')|list|length }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-card" style="margin-top: 20px;">
+        <h2>User's Tickets</h2>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Ref #</th>
+                    <th>Route</th>
+                    <th>Departure</th>
+                    <th>Amount</th>
+                    <th>Payment</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr>
+                    <td>{{ ticket.id }}</td>
+                    <td>{{ ticket.reference_number }}</td>
+                    <td>{{ ticket.route }}</td>
+                    <td>{{ ticket.departure_date }}</td>
+                    <td>₱{{ "%.2f"|format(ticket.amount) }}</td>
+                    <td>
+                        <span class="status-badge status-{{ ticket.payment_status }}">
+                            {{ ticket.payment_status }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ ticket.status }}">
+                            {{ ticket.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('admin_ticket_detail', ticket_id=ticket.id) }}" class="btn-small view">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div style="margin-top: 20px; text-align: center;">
+        <a href="{{ url_for('admin_users') }}" class="auth-btn" style="display: inline-block; padding: 12px 30px;">Back to Users</a>
+    </div>
+</div>
+
+<style>
+    .admin-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+    
+    .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+        margin-bottom: 40px;
+        padding: 30px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .avatar-circle {
+        width: 100px;
+        height: 100px;
+        background: linear-gradient(135deg, #0056a6, #003d7a);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        font-weight: bold;
+        color: white;
+    }
+    
+    .profile-title h1 {
+        margin: 0;
+        color: #333;
+        font-size: 32px;
+    }
+    
+    .profile-email {
+        color: #666;
+        font-size: 16px;
+        margin: 5px 0;
+    }
+    
+    .admin-badge, .banned-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    
+    .admin-badge {
+        background: #0056a6;
+        color: white;
+    }
+    
+    .banned-badge {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .profile-card, .admin-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .profile-card h2, .admin-card h2 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #333;
+        font-size: 20px;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 10px;
+    }
+    
+    .info-row {
+        display: flex;
+        margin-bottom: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .info-label {
+        width: 120px;
+        font-weight: 600;
+        color: #666;
+    }
+    
+    .info-value {
+        flex: 1;
+        color: #333;
+    }
+    
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .data-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        display: inline-block;
+    }
+    
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-paid {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-failed {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .status-cancelled {
+        background: #e2e3e5;
+        color: #383d41;
+    }
+    
+    .status-processing {
+        background: #cce5ff;
+        color: #004085;
+    }
+    
+    .btn-small {
+        padding: 4px 8px;
+        border: none;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-small.view {
+        background: #0056a6;
+        color: white;
+    }
+    
+    .auth-btn {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        text-decoration: none;
+    }
+    
+    .auth-btn:hover {
+        background-color: #5a6268;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}Payment Successful - ShippyDash Kiosk{% endblock %}
+{% block content %}
+<div class="booking-card" style="text-align: center; max-width: 600px; margin: 60px auto;">
+  <div style="font-size: 80px; color: #28a745; margin-bottom: 20px; animation: bounce 1s;">✓</div>
+  <h1 style="color: #28a745; margin-bottom: 20px;">Payment Successful!</h1>
+  
+  <div style="background: #f8f9fa; padding: 30px; border-radius: 12px; margin: 30px 0;">
+    <p style="font-size: 18px; margin-bottom: 15px;">Your ferry ticket has been confirmed and paid.</p>
+    <p style="margin: 10px 0;"><strong>Booking Reference:</strong> <span style="font-family: monospace; font-size: 18px; color: #0056a6;">#{{ ticket.reference_number }}</span></p>
+    <p style="margin: 10px 0;"><strong>Route:</strong> {{ ticket.route }}</p>
+    <p style="margin: 10px 0;"><strong>Departure:</strong> {{ ticket.departure_date }} at {{ ticket.departure_time }}</p>
+    {% if ticket.trip_type == 'round-trip' %}
+    <p style="margin: 10px 0;"><strong>Return:</strong> {{ ticket.return_date }} at {{ ticket.return_time }}</p>
+    {% endif %}
+    <p style="margin: 10px 0;"><strong>Amount Paid:</strong> <span style="color: #28a745; font-weight: bold; font-size: 20px;">₱{{ "%.2f"|format(ticket.amount) }}</span></p>
+  </div>
+  
+  <!-- Receipt Download Section -->
+  <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <h3 style="color: #0056a6; margin-bottom: 15px;">📱 Get Your Ticket</h3>
+    <p>Your ticket includes a QR code for easy verification at the port.</p>
+    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
+      <a href="{{ url_for('kiosk_receipt', ticket_id=ticket.id) }}" class="receipt-btn download-btn">
+        <i class="fas fa-download"></i> Download PDF
+      </a>
+      <a href="{{ url_for('kiosk_receipt', ticket_id=ticket.id) }}" target="_blank" class="receipt-btn view-btn">
+        <i class="fas fa-eye"></i> View Ticket
+      </a>
+      <button onclick="printTicket()" class="receipt-btn print-btn">
+        <i class="fas fa-print"></i> Print Ticket
+      </button>
+    </div>
+    <p style="font-size: 12px; color: #666; margin-top: 10px;">
+      <i class="fas fa-info-circle"></i> Present this ticket (printed or on your phone) at the boarding gate
+    </p>
+  </div>
+  
+  <p style="color: #666; margin-bottom: 30px;">A confirmation email has been sent to {{ ticket.passenger_email }}</p>
+  
+  <div style="margin-top: 30px;">
+    <a href="{{ url_for('kiosk') }}" class="kiosk-home-btn" style="display: inline-block; width: auto; padding: 15px 40px; margin: 5px;">
+      <i class="fas fa-home"></i> Back to Kiosk
+    </a>
+    <a href="{{ url_for('kiosk') }}" class="new-booking-btn" style="display: inline-block; width: auto; padding: 15px 40px; margin: 5px;">
+      <i class="fas fa-plus"></i> New Booking
+    </a>
+  </div>
+  
+  <!-- Countdown timer for kiosk auto-reset -->
+  <div style="margin-top: 30px; padding: 15px; background: #f0f0f0; border-radius: 8px;">
+    <p style="margin: 0; color: #666;">
+      <i class="fas fa-clock"></i> Returning to kiosk in 
+      <span id="countdown" style="font-weight: bold; color: #ff6600; font-size: 18px;">30</span> seconds
+    </p>
+  </div>
+</div>
+
+<style>
+  @keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+    40% {transform: translateY(-30px);}
+    60% {transform: translateY(-15px);}
+  }
+  
+  .receipt-btn {
+    display: inline-block;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .download-btn {
+    background: #0056a6;
+    color: white;
+  }
+  
+  .download-btn:hover {
+    background: #003d7a;
+    transform: translateY(-2px);
+  }
+  
+  .view-btn {
+    background: #28a745;
+    color: white;
+  }
+  
+  .view-btn:hover {
+    background: #218838;
+    transform: translateY(-2px);
+  }
+
+  .print-btn {
+    background: #fd7e14;
+    color: white;
+  }
+
+  .print-btn:hover {
+    background: #e06b0a;
+    transform: translateY(-2px);
+  }
+  
+  .kiosk-home-btn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+  
+  .kiosk-home-btn:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+  }
+  
+  .new-booking-btn {
+    background-color: #ff6600;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+  
+  .new-booking-btn:hover {
+    background-color: #e65c00;
+    transform: translateY(-2px);
+  }
+  
+  /* Print Styles */
+  @media print {
+    .receipt-btn, .kiosk-home-btn, .new-booking-btn, [style*="countdown"] {
+      display: none !important;
+    }
+    
+    .booking-card {
+      margin: 0;
+      padding: 0;
+      box-shadow: none;
+      max-width: 100%;
+    }
+    
+    body {
+      background: white;
+      padding: 20px;
+    }
+  }
+</style>
+
+<script>
+  function printTicket() {
+    var printWindow = window.open("{{ url_for('kiosk_receipt', ticket_id=ticket.id) }}", '_blank');
+    printWindow.addEventListener('load', function() {
+      printWindow.print();
+    });
+  }
+  
+  // Auto-redirect to kiosk after 30 seconds
+  let seconds = 30;
+  const countdownEl = document.getElementById('countdown');
+  const timer = setInterval(function() {
+    seconds--;
+    if (countdownEl) {
+      countdownEl.textContent = seconds;
+    }
+    if (seconds <= 0) {
+      clearInterval(timer);
+      window.location.href = "{{ url_for('kiosk') }}";
+    }
+  }, 1000);
+</script>
+
+{% endblock %}

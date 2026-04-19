@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<div class="auth-page login-bg">
+  <div class="auth-card">
+    <h1>Passenger Login</h1>
+    
+    <!-- Display flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">
+            <span class="icon">
+              {% if category == 'error' %}⚠️
+              {% elif category == 'success' %}✅
+              {% else %}ℹ️
+              {% endif %}
+            </span>
+            {{ message }}
+            {% if category == 'error' and 'register' in message|lower %}
+              <a href="{{ url_for('register') }}" class="alert-link">Click here to register</a>
+            {% endif %}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    
+    <!-- Display regular error message if exists -->
+    {% if error %}
+    <div class="alert alert-error">
+      <span class="icon">⚠️</span>
+      {{ error }}
+      {% if 'No account found' in error %}
+        <a href="{{ url_for('register') }}" class="alert-link">Register now</a>
+      {% endif %}
+    </div>
+    {% endif %}
+    
+    <form method="POST">
+      <div class="form-group">
+        <label>Email:</label>
+        <input type="email" name="email" value="{{ request.form.email or '' }}" required placeholder="your@email.com">
+      </div>
+      
+      <div class="form-group">
+        <label>Password:</label>
+        <input type="password" name="password" required placeholder="••••••••">
+        <div class="form-options">
+          <a href="{{ url_for('forgot_password') }}" class="forgot-link">Forgot password?</a>
+        </div>
+      </div>
+      
+      <button type="submit" class="auth-btn">Login</button>
+    </form>
+    
+    <p class="auth-link">Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+  </div>
+</div>
+
+<style>
+  .alert {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+  }
+  
+  .alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+  }
+  
+  .alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+  }
+  
+  .alert-link {
+    color: #721c24;
+    font-weight: bold;
+    text-decoration: underline;
+    margin-left: 5px;
+    padding: 2px 8px;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+  }
+  
+  .alert-link:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+    text-decoration: none;
+  }
+  
+  .icon {
+    font-size: 18px;
+  }
+  
+  .form-options {
+    margin-top: 5px;
+    text-align: right;
+  }
+  
+  .forgot-link {
+    font-size: 12px;
+    color: #0056a6;
+    text-decoration: none;
+  }
+  
+  .forgot-link:hover {
+    text-decoration: underline;
+  }
+  
+  .auth-card {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    max-width: 400px;
+    width: 100%;
+  }
+  
+  .auth-link {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 14px;
+  }
+  
+  .auth-link a {
+    color: #0056a6;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  
+  .auth-link a:hover {
+    text-decoration: underline;
+  }
+</style>
+{% endblock %}

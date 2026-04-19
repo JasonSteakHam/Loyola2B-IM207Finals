@@ -1,0 +1,1167 @@
+{% extends "base.html" %}
+{% block title %}ShippyDash Kiosk - Self-Service Booking{% endblock %}
+{% block content %}
+
+<style>
+    .kiosk-wrapper {
+        max-width: 1300px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    /* Kiosk Header Banner */
+    .kiosk-banner {
+        background: linear-gradient(135deg, #0056a6, #003d7a);
+        border-radius: 16px;
+        padding: 30px 40px;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 8px 24px rgba(0, 86, 166, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .kiosk-banner::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #ff6600, #ffcc00, #28a745);
+    }
+
+    .kiosk-banner-left h1 {
+        margin: 0 0 6px;
+        font-size: 32px;
+        font-weight: 800;
+        color: white;
+        letter-spacing: 1px;
+    }
+
+    .kiosk-banner-left p {
+        margin: 0;
+        color: rgba(255,255,255,0.8);
+        font-size: 15px;
+    }
+
+    .kiosk-clock {
+        background: rgba(255,255,255,0.15);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 50px;
+        font-size: 16px;
+        font-weight: 600;
+        text-align: right;
+        backdrop-filter: blur(4px);
+    }
+
+    .kiosk-clock .time {
+        font-size: 26px;
+        font-weight: 800;
+        display: block;
+    }
+
+    /* Main Grid */
+    .kiosk-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+    }
+
+    /* Cards */
+    .kiosk-card {
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .kiosk-card h2 {
+        margin: 0 0 24px;
+        font-size: 20px;
+        color: #1a1a1a;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 14px;
+        border-bottom: 3px solid #ff6600;
+    }
+
+    .kiosk-card h2 i {
+        color: #ff6600;
+    }
+
+    /* Trip Type */
+    .trip-type-row {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 24px;
+        background: #f8f9fa;
+        padding: 16px;
+        border-radius: 12px;
+    }
+
+    .trip-option {
+        flex: 1;
+    }
+
+    .trip-option input[type="radio"] {
+        display: none;
+    }
+
+    .trip-option label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 16px;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        color: #555;
+        transition: all 0.25s ease;
+    }
+
+    .trip-option label i {
+        font-size: 20px;
+        color: #aaa;
+    }
+
+    .trip-option input[type="radio"]:checked + label {
+        border-color: #ff6600;
+        background: #fff4e5;
+        color: #ff6600;
+    }
+
+    .trip-option input[type="radio"]:checked + label i {
+        color: #ff6600;
+    }
+
+    /* Form Grid */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group.full-width {
+        grid-column: span 2;
+    }
+
+    .form-group label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #555;
+        margin-bottom: 7px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .form-group label i {
+        color: #0056a6;
+        margin-right: 6px;
+    }
+
+    .form-group select,
+    .form-group input[type="text"],
+    .form-group input[type="email"],
+    .form-group input[type="tel"],
+    .form-group input[type="date"] {
+        padding: 12px 14px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 15px;
+        color: #333;
+        background: white;
+        transition: border-color 0.25s;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .form-group select:focus,
+    .form-group input:focus {
+        outline: none;
+        border-color: #0056a6;
+        box-shadow: 0 0 0 3px rgba(0, 86, 166, 0.1);
+    }
+
+    .form-group input.date-error {
+        border-color: #dc3545;
+        background-color: #fff8f8;
+    }
+
+    /* Date Warning */
+    .date-warning {
+        color: #856404;
+        font-size: 12px;
+        margin-top: 5px;
+        padding: 8px 12px;
+        background: #fff3cd;
+        border-radius: 6px;
+        display: inline-block;
+        width: 100%;
+        box-sizing: border-box;
+        border-left: 3px solid #ffc107;
+    }
+
+    .date-warning i {
+        margin-right: 6px;
+    }
+
+    /* Amount Display */
+    .amount-box {
+        background: linear-gradient(135deg, #0056a6, #003d7a);
+        color: white;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        margin-top: 4px;
+    }
+
+    .amount-box .amount-label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        opacity: 0.8;
+        margin-bottom: 4px;
+    }
+
+    .amount-box .amount-value {
+        font-size: 42px;
+        font-weight: 800;
+        letter-spacing: -1px;
+    }
+
+    /* Schedule Dropdown */
+    .schedule-select {
+        width: 100%;
+        padding: 12px 14px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 15px;
+        background: white;
+    }
+
+    .schedule-info {
+        font-size: 12px;
+        color: #28a745;
+        margin-top: 5px;
+    }
+
+    /* Action Buttons */
+    .form-actions {
+        grid-column: span 2;
+        display: flex;
+        gap: 12px;
+        margin-top: 8px;
+    }
+
+    .btn-reset {
+        flex: 1;
+        padding: 16px;
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.25s ease;
+    }
+
+    .btn-reset:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .btn-book {
+        flex: 2;
+        padding: 16px;
+        background: #ff6600;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 17px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 15px rgba(255, 102, 0, 0.35);
+    }
+
+    .btn-book:hover {
+        background: #e65c00;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 102, 0, 0.45);
+    }
+
+    /* Info Panel */
+    .info-section-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0056a6;
+        margin: 20px 0 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #e8f4fd;
+    }
+
+    /* Dynamic Schedule Items */
+    .schedule-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 6px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .schedule-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        border-left: 4px solid #0056a6;
+        transition: all 0.2s;
+    }
+
+    .schedule-item:hover {
+        background: #e8f4fd;
+        transform: translateX(3px);
+    }
+
+    .schedule-time {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0056a6;
+        min-width: 80px;
+    }
+
+    .schedule-route {
+        flex: 1;
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .schedule-badge {
+        background: #d4edda;
+        color: #155724;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 20px;
+    }
+
+    /* Fare Table - Dynamic */
+    .fare-table {
+        width: 100%;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+    }
+
+    .fare-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 11px 16px;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 14px;
+    }
+
+    .fare-row:last-child {
+        border-bottom: none;
+    }
+
+    .fare-row:nth-child(odd) {
+        background: #f8f9fa;
+    }
+
+    .fare-label { color: #666; font-weight: 500; }
+    .fare-value { font-weight: 700; color: #0056a6; }
+
+    /* Reminders */
+    .reminders-box {
+        background: #fff8f0;
+        border: 1px solid #ffe0c0;
+        border-radius: 10px;
+        padding: 16px;
+        margin-top: 16px;
+    }
+
+    .reminders-box h4 {
+        color: #ff6600;
+        margin: 0 0 10px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .reminders-box ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .reminders-box ul li {
+        font-size: 13px;
+        color: #666;
+        padding: 4px 0;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .reminders-box ul li::before {
+        content: '✓';
+        color: #28a745;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    /* Alert messages */
+    .kiosk-alert {
+        padding: 14px 18px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .kiosk-alert.error {
+        background: #f8d7da;
+        color: #721c24;
+        border-left: 4px solid #dc3545;
+    }
+
+    .kiosk-alert.success {
+        background: #d4edda;
+        color: #155724;
+        border-left: 4px solid #28a745;
+    }
+
+    /* Loading Overlay */
+    #loadingOverlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.75);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .loading-box {
+        background: white;
+        padding: 40px;
+        border-radius: 16px;
+        text-align: center;
+        max-width: 360px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .spinner {
+        border: 5px solid #f0f0f0;
+        border-top: 5px solid #ff6600;
+        border-radius: 50%;
+        width: 56px;
+        height: 56px;
+        animation: spin 0.9s linear infinite;
+        margin: 0 auto 20px;
+    }
+
+    .loading-box h3 {
+        color: #0056a6;
+        margin: 0 0 8px;
+    }
+
+    .loading-box p {
+        color: #888;
+        font-size: 14px;
+        margin: 0;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Kiosk Footer */
+    .kiosk-footer-bar {
+        margin-top: 24px;
+        padding: 16px 20px;
+        background: white;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        font-size: 13px;
+        color: #888;
+    }
+
+    .kiosk-footer-bar a {
+        color: #0056a6;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: color 0.2s;
+    }
+
+    .kiosk-footer-bar a:hover {
+        color: #ff6600;
+    }
+
+    .kiosk-footer-links {
+        display: flex;
+        gap: 20px;
+    }
+
+    @media (max-width: 1024px) {
+        .kiosk-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+        .form-grid { grid-template-columns: 1fr; }
+        .form-group.full-width { grid-column: span 1; }
+        .form-actions { flex-direction: column; }
+        .trip-type-row { flex-direction: column; }
+        .kiosk-banner { flex-direction: column; gap: 16px; text-align: center; }
+        .kiosk-footer-bar { flex-direction: column; gap: 10px; text-align: center; }
+    }
+</style>
+
+<div class="kiosk-wrapper">
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="kiosk-alert {{ category }}">
+                    <i class="fas fa-{% if category == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
+                    <span>{{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Banner -->
+    <div class="kiosk-banner">
+        <div class="kiosk-banner-left">
+            <h1><i class="fas fa-ship"></i> ShippyDash Kiosk</h1>
+            <p>Self-Service Ferry Booking Terminal — FerrySafe. FerryFast. FerryConvenient.</p>
+        </div>
+        <div class="kiosk-clock">
+            <span class="time" id="clockTime">--:--:--</span>
+            <span id="clockDate">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="kiosk-grid">
+
+        <!-- Booking Form -->
+        <div class="kiosk-card">
+            <h2><i class="fas fa-ticket-alt"></i> Book Your Ferry Trip</h2>
+
+            <form method="POST" id="kioskForm">
+
+                <!-- Trip Type -->
+                <div class="trip-type-row">
+                    <div class="trip-option">
+                        <input type="radio" name="trip_type" value="one-way" id="oneway" checked onchange="updatePrice()">
+                        <label for="oneway">
+                            <i class="fas fa-arrow-right"></i> One Way
+                        </label>
+                    </div>
+                    <div class="trip-option">
+                        <input type="radio" name="trip_type" value="round-trip" id="roundtrip" onchange="updatePrice()">
+                        <label for="roundtrip">
+                            <i class="fas fa-exchange-alt"></i> Round Trip
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <!-- From -->
+                    <div class="form-group">
+                        <label><i class="fas fa-map-marker-alt"></i> From</label>
+                        <select name="from" id="from" required onchange="loadSchedulesAndPrices(); validateRoute()">
+                            <option value="">Select Departure Port</option>
+                            <option value="Naval">Naval Port</option>
+                            <option value="Cebu">Cebu Port</option>
+                            <option value="Ormoc">Ormoc Port</option>
+                        </select>
+                    </div>
+
+                    <!-- To -->
+                    <div class="form-group">
+                        <label><i class="fas fa-map-pin"></i> To</label>
+                        <select name="to" id="to" required onchange="loadSchedulesAndPrices(); validateRoute()">
+                            <option value="">Select Destination Port</option>
+                            <option value="Naval">Naval Port</option>
+                            <option value="Cebu">Cebu Port</option>
+                            <option value="Ormoc">Ormoc Port</option>
+                        </select>
+                    </div>
+
+                    <!-- Departure Schedule -->
+                    <div class="form-group">
+                        <label><i class="fas fa-clock"></i> Departure Schedule</label>
+                        <select name="departure_schedule" id="departure_schedule" class="schedule-select" required onchange="updateScheduleInfo()">
+                            <option value="">Select departure time</option>
+                        </select>
+                        <div class="schedule-info" id="departureScheduleInfo"></div>
+                    </div>
+
+                    <!-- Departure Date -->
+                    <div class="form-group">
+                        <label><i class="far fa-calendar-alt"></i> Departure Date</label>
+                        <input type="date" name="departure_date" id="departure" required onchange="checkDepartureDateDisabled()">
+                        <div id="departureWarning" class="date-warning" style="display: none;"></div>
+                    </div>
+
+                    <!-- Return Schedule -->
+                    <div class="form-group" id="returnScheduleGroup" style="display:none;">
+                        <label><i class="fas fa-clock"></i> Return Schedule</label>
+                        <select name="return_schedule" id="return_schedule" class="schedule-select">
+                            <option value="">Select return time</option>
+                        </select>
+                        <div class="schedule-info" id="returnScheduleInfo"></div>
+                    </div>
+
+                    <!-- Return Date -->
+                    <div class="form-group" id="returnDateGroup" style="display:none;">
+                        <label><i class="far fa-calendar-check"></i> Return Date</label>
+                        <input type="date" name="return_date" id="return" onchange="checkReturnDateDisabled()">
+                        <div id="returnWarning" class="date-warning" style="display: none;"></div>
+                    </div>
+
+                    <!-- Passenger Name -->
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Full Name</label>
+                        <input type="text" name="passenger_name" required placeholder="Enter passenger full name">
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label><i class="fas fa-envelope"></i> Email Address</label>
+                        <input type="email" name="passenger_email" required placeholder="your@email.com">
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="form-group">
+                        <label><i class="fas fa-phone"></i> Contact Number</label>
+                        <input type="tel" name="passenger_phone" required placeholder="e.g., 09123456789">
+                    </div>
+
+                    <!-- Special Requests -->
+                    <div class="form-group">
+                        <label><i class="fas fa-comment-dots"></i> Special Requests</label>
+                        <input type="text" name="special_requests" placeholder="Optional">
+                    </div>
+
+                    <!-- Amount -->
+                    <div class="form-group full-width">
+                        <div class="amount-box">
+                            <div class="amount-label">Total Amount Due</div>
+                            <div class="amount-value" id="totalAmount">₱0.00</div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="form-actions">
+                        <button type="button" class="btn-reset" onclick="resetForm()">
+                            <i class="fas fa-redo-alt"></i> Reset
+                        </button>
+                        <button type="submit" class="btn-book" id="submitBtn">
+                            <i class="fas fa-credit-card"></i> Book Now & Pay
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="kiosk-card">
+            <h2><i class="fas fa-info-circle"></i> Information</h2>
+
+            <div class="info-section-title">
+                <i class="fas fa-clock"></i> Available Schedules
+            </div>
+
+            <div class="schedule-list" id="scheduleList">
+                <div class="schedule-item">
+                    <div class="schedule-time">—</div>
+                    <div class="schedule-route">Select a route first</div>
+                    <div class="schedule-badge">—</div>
+                </div>
+            </div>
+
+            <div class="info-section-title">
+                <i class="fas fa-tags"></i> Fare Guide
+            </div>
+
+            <div class="fare-table" id="fareTable">
+                <div class="fare-row">
+                    <span class="fare-label">One Way (Adult)</span>
+                    <span class="fare-value" id="oneWayFare">₱0.00</span>
+                </div>
+                <div class="fare-row">
+                    <span class="fare-label">Round Trip (Adult)</span>
+                    <span class="fare-value" id="roundTripFare">₱0.00</span>
+                </div>
+                <div class="fare-row">
+                    <span class="fare-label">Children (Below 3ft)</span>
+                    <span class="fare-value" style="color:#28a745;">Free</span>
+                </div>
+                <div class="fare-row">
+                    <span class="fare-label">Student / Senior</span>
+                    <span class="fare-value" style="color:#ff6600;">20% Off</span>
+                </div>
+            </div>
+
+            <div class="reminders-box">
+                <h4><i class="fas fa-exclamation-triangle"></i> Important Reminders</h4>
+                <ul>
+                    <li>Arrive at least 2 hours before departure</li>
+                    <li>Valid ID required for boarding</li>
+                    <li>Baggage allowance: 20kg per passenger</li>
+                    <li>E-ticket will be sent to your email</li>
+                    <li>Admin fees are non-refundable</li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer Bar -->
+    <div class="kiosk-footer-bar">
+        <span>© 2026 ShippyDash Kiosk System. All Rights Reserved.</span>
+        <div class="kiosk-footer-links">
+            <a href="{{ url_for('home') }}"><i class="fas fa-home"></i> Main Website</a>
+            <a href="#" onclick="window.location.reload()"><i class="fas fa-sync-alt"></i> Reset Kiosk</a>
+            <a href="#" onclick="window.print()"><i class="fas fa-print"></i> Print Schedule</a>
+        </div>
+    </div>
+
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay">
+    <div class="loading-box">
+        <div class="spinner"></div>
+        <h3>Processing Your Booking</h3>
+        <p>Please wait while we prepare your payment...</p>
+    </div>
+</div>
+
+<script>
+    // Store data from database
+    let schedulesData = [];
+    let currentPrices = { oneWay: 0, roundTrip: 0 };
+    let currentRouteId = null;
+    
+    // Live Clock
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('clockTime').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        document.getElementById('clockDate').textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+    
+    // Check if date is disabled (returns disabled status and reason)
+    async function isDateDisabled(date, from, to) {
+        if (!date) return { disabled: false, reason: null };
+        
+        try {
+            const response = await fetch(`/api/check-date-disabled?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${encodeURIComponent(date)}`);
+            const data = await response.json();
+            return { disabled: data.disabled, reason: data.reason, message: data.message };
+        } catch (error) {
+            console.error('Error checking date:', error);
+            return { disabled: false, reason: null };
+        }
+    }
+    
+    // Check departure date
+    async function checkDepartureDateDisabled() {
+        const from = document.getElementById('from').value;
+        const to = document.getElementById('to').value;
+        const dateInput = document.getElementById('departure');
+        const date = dateInput.value;
+        const warningDiv = document.getElementById('departureWarning');
+        
+        if (!from || !to) {
+            warningDiv.style.display = 'none';
+            return true;
+        }
+        
+        if (!date) return true;
+        
+        const result = await isDateDisabled(date, from, to);
+        
+        if (result.disabled) {
+            warningDiv.innerHTML = `<i class="fas fa-calendar-times"></i> ${result.message || 'This date is not available for booking'}`;
+            warningDiv.style.display = 'block';
+            dateInput.classList.add('date-error');
+            dateInput.value = '';
+            
+            alert(`❌ ${result.message || 'This date is not available for booking'}\n\nPlease select another date.`);
+            
+            // Find next available date
+            await findNextAvailableDate();
+            return false;
+        } else {
+            warningDiv.style.display = 'none';
+            dateInput.classList.remove('date-error');
+            return true;
+        }
+    }
+    
+    // Check return date
+    async function checkReturnDateDisabled() {
+        const from = document.getElementById('from').value;
+        const to = document.getElementById('to').value;
+        const dateInput = document.getElementById('return');
+        const date = dateInput.value;
+        const warningDiv = document.getElementById('returnWarning');
+        
+        if (!from || !to) {
+            warningDiv.style.display = 'none';
+            return true;
+        }
+        
+        if (!date) return true;
+        
+        const result = await isDateDisabled(date, from, to);
+        
+        if (result.disabled) {
+            warningDiv.innerHTML = `<i class="fas fa-calendar-times"></i> ${result.message || 'This return date is not available for booking'}`;
+            warningDiv.style.display = 'block';
+            dateInput.classList.add('date-error');
+            dateInput.value = '';
+            
+            alert(`❌ ${result.message || 'This return date is not available for booking'}\n\nPlease select another date.`);
+            return false;
+        } else {
+            warningDiv.style.display = 'none';
+            dateInput.classList.remove('date-error');
+            return true;
+        }
+    }
+    
+    // Find next available date
+    async function findNextAvailableDate() {
+        const from = document.getElementById('from').value;
+        const to = document.getElementById('to').value;
+        const dateInput = document.getElementById('departure');
+        
+        let checkDate = new Date();
+        checkDate.setDate(checkDate.getDate() + 1);
+        
+        let found = false;
+        let attempts = 0;
+        const maxAttempts = 60;
+        
+        while (!found && attempts < maxAttempts) {
+            const dateStr = checkDate.toISOString().split('T')[0];
+            const result = await isDateDisabled(dateStr, from, to);
+            
+            if (!result.disabled) {
+                dateInput.value = dateStr;
+                found = true;
+                showNotification(`Next available date: ${dateStr}`, 'info');
+                break;
+            }
+            
+            checkDate.setDate(checkDate.getDate() + 1);
+            attempts++;
+        }
+        
+        if (!found) {
+            alert('No available dates found in the next 60 days. Please contact support or choose a different route.');
+        }
+    }
+    
+    // Load schedules and prices from database
+    async function loadSchedulesAndPrices() {
+        const from = document.getElementById('from').value;
+        const to = document.getElementById('to').value;
+        const departureSelect = document.getElementById('departure_schedule');
+        const returnSelect = document.getElementById('return_schedule');
+        const scheduleList = document.getElementById('scheduleList');
+        
+        if (!from || !to) {
+            departureSelect.innerHTML = '<option value="">Select departure time</option>';
+            returnSelect.innerHTML = '<option value="">Select return time</option>';
+            scheduleList.innerHTML = '<div class="schedule-item"><div class="schedule-time">—</div><div class="schedule-route">Select a route first</div><div class="schedule-badge">—</div></div>';
+            return;
+        }
+        
+        if (from === to) {
+            alert('Departure and destination cannot be the same!');
+            document.getElementById('to').value = '';
+            return;
+        }
+        
+        try {
+            // Fetch schedules
+            const scheduleResponse = await fetch(`/api/schedules?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+            const scheduleData = await scheduleResponse.json();
+            
+            // Fetch route prices
+            const priceResponse = await fetch(`/api/route-price?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+            const priceData = await priceResponse.json();
+            
+            if (priceData.success) {
+                currentPrices.oneWay = priceData.one_way_price;
+                currentPrices.roundTrip = priceData.round_trip_price;
+                currentRouteId = priceData.route_id;
+                
+                // Update fare display
+                document.getElementById('oneWayFare').textContent = '₱' + currentPrices.oneWay.toFixed(2);
+                document.getElementById('roundTripFare').textContent = '₱' + currentPrices.roundTrip.toFixed(2);
+            }
+            
+            if (scheduleData.schedules && scheduleData.schedules.length > 0) {
+                schedulesData = scheduleData.schedules;
+                
+                // Populate departure schedule dropdown
+                departureSelect.innerHTML = '<option value="">Select departure time</option>';
+                returnSelect.innerHTML = '<option value="">Select return time</option>';
+                
+                // Populate schedule list in info panel
+                scheduleList.innerHTML = '';
+                
+                for (const schedule of schedulesData) {
+                    const vesselText = schedule.vessel_name ? ` 🚢 ${schedule.vessel_name}` : '';
+                    const durationText = schedule.duration ? ` (${schedule.duration})` : '';
+                    
+                    departureSelect.innerHTML += `<option value="${schedule.id}" 
+                        data-time="${schedule.departure_time}"
+                        data-arrival="${schedule.arrival_time}"
+                        data-vessel="${schedule.vessel_name || ''}"
+                        data-duration="${schedule.duration || ''}">
+                        ${schedule.departure_time} → ${schedule.arrival_time}${durationText}${vesselText}
+                    </option>`;
+                    
+                    returnSelect.innerHTML += `<option value="${schedule.id}" 
+                        data-time="${schedule.departure_time}"
+                        data-arrival="${schedule.arrival_time}">
+                        ${schedule.departure_time} → ${schedule.arrival_time}${durationText}
+                    </option>`;
+                    
+                    // Add to schedule list
+                    scheduleList.innerHTML += `
+                        <div class="schedule-item">
+                            <div class="schedule-time">${schedule.departure_time}</div>
+                            <div class="schedule-route">${from} → ${to}</div>
+                            <div class="schedule-badge">Available</div>
+                        </div>
+                    `;
+                }
+                
+                updatePrice();
+            } else {
+                departureSelect.innerHTML = '<option value="">No schedules available</option>';
+                returnSelect.innerHTML = '<option value="">No schedules available</option>';
+                scheduleList.innerHTML = '<div class="schedule-item"><div class="schedule-time">—</div><div class="schedule-route">No schedules found</div><div class="schedule-badge">—</div></div>';
+            }
+        } catch (error) {
+            console.error('Error loading data:', error);
+            showNotification('Error loading schedules and prices', 'error');
+        }
+    }
+    
+    function updateScheduleInfo() {
+        const departureSelect = document.getElementById('departure_schedule');
+        const selected = departureSelect.options[departureSelect.selectedIndex];
+        const infoDiv = document.getElementById('departureScheduleInfo');
+        
+        if (selected && selected.value) {
+            const arrival = selected.getAttribute('data-arrival');
+            const vessel = selected.getAttribute('data-vessel');
+            const duration = selected.getAttribute('data-duration');
+            infoDiv.innerHTML = vessel ? `🚢 Vessel: ${vessel} | Arrives at ${arrival} | Duration: ${duration || '2 hours'}` : `⏱️ Arrives at ${arrival} | Duration: ${duration || '2 hours'}`;
+        } else {
+            infoDiv.innerHTML = '';
+        }
+    }
+    
+    // Update price based on trip type
+    function updatePrice() {
+        const tripType = document.querySelector('input[name="trip_type"]:checked').value;
+        const totalAmount = document.getElementById('totalAmount');
+        const returnScheduleGroup = document.getElementById('returnScheduleGroup');
+        const returnDateGroup = document.getElementById('returnDateGroup');
+        const returnSchedule = document.getElementById('return_schedule');
+        const returnDate = document.getElementById('return');
+        
+        if (tripType === 'one-way') {
+            totalAmount.textContent = '₱' + currentPrices.oneWay.toFixed(2);
+            returnScheduleGroup.style.display = 'none';
+            returnDateGroup.style.display = 'none';
+            returnSchedule.required = false;
+            returnDate.required = false;
+        } else {
+            totalAmount.textContent = '₱' + currentPrices.roundTrip.toFixed(2);
+            returnScheduleGroup.style.display = 'flex';
+            returnDateGroup.style.display = 'flex';
+            returnSchedule.required = true;
+            returnDate.required = true;
+        }
+    }
+    
+    // Validate route
+    function validateRoute() {
+        const from = document.getElementById('from').value;
+        const to = document.getElementById('to').value;
+        if (from && to && from === to) {
+            alert('Departure and destination cannot be the same!');
+            document.getElementById('to').value = '';
+        }
+    }
+    
+    // Reset form
+    function resetForm() {
+        document.getElementById('kioskForm').reset();
+        document.getElementById('returnScheduleGroup').style.display = 'none';
+        document.getElementById('returnDateGroup').style.display = 'none';
+        document.getElementById('departure_schedule').innerHTML = '<option value="">Select departure time</option>';
+        document.getElementById('return_schedule').innerHTML = '<option value="">Select return time</option>';
+        document.getElementById('departureWarning').style.display = 'none';
+        document.getElementById('returnWarning').style.display = 'none';
+        setDefaultDates();
+        updatePrice();
+    }
+    
+    // Set default dates
+    function setDefaultDates() {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+        const dep = document.getElementById('departure');
+        dep.min = tomorrowStr;
+        dep.value = tomorrowStr;
+        const dayAfter = new Date(tomorrow);
+        dayAfter.setDate(dayAfter.getDate() + 1);
+        document.getElementById('return').min = dayAfter.toISOString().split('T')[0];
+    }
+    
+    // Update return min date when departure changes
+    document.getElementById('departure').addEventListener('change', function () {
+        const dep = new Date(this.value);
+        dep.setDate(dep.getDate() + 1);
+        document.getElementById('return').min = dep.toISOString().split('T')[0];
+        checkDepartureDateDisabled();
+    });
+    
+    // Form submit
+    document.getElementById('kioskForm').addEventListener('submit', async function (e) {
+        const tripType = document.querySelector('input[name="trip_type"]:checked').value;
+        const dep = document.getElementById('departure').value;
+        const ret = document.getElementById('return').value;
+        const departureSchedule = document.getElementById('departure_schedule').value;
+        const from = document.getElementById('from').value;
+        const to = document.getElementById('to').value;
+        
+        if (!departureSchedule) {
+            e.preventDefault();
+            alert('Please select a departure schedule.');
+            return;
+        }
+        
+        if (!dep) {
+            e.preventDefault();
+            alert('Please select a departure date.');
+            return;
+        }
+        
+        // Double-check departure date is not disabled
+        const depCheck = await isDateDisabled(dep, from, to);
+        if (depCheck.disabled) {
+            e.preventDefault();
+            alert(`❌ ${depCheck.message || 'Selected departure date is not available'}\n\nPlease select another date.`);
+            document.getElementById('departure').value = '';
+            return;
+        }
+        
+        if (tripType === 'round-trip') {
+            const returnSchedule = document.getElementById('return_schedule').value;
+            if (!returnSchedule) {
+                e.preventDefault();
+                alert('Please select a return schedule.');
+                return;
+            }
+            if (!ret) {
+                e.preventDefault();
+                alert('Please select a return date.');
+                return;
+            }
+            
+            // Double-check return date is not disabled
+            const retCheck = await isDateDisabled(ret, from, to);
+            if (retCheck.disabled) {
+                e.preventDefault();
+                alert(`❌ ${retCheck.message || 'Selected return date is not available'}\n\nPlease select another date.`);
+                document.getElementById('return').value = '';
+                return;
+            }
+            
+            if (new Date(ret) <= new Date(dep)) {
+                e.preventDefault();
+                alert('Return date must be after departure date!');
+                return;
+            }
+        }
+        
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        document.getElementById('submitBtn').disabled = true;
+    });
+    
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `kiosk-alert ${type}`;
+        notification.innerHTML = `<i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'check-circle'}"></i><span>${message}</span>`;
+        const wrapper = document.querySelector('.kiosk-wrapper');
+        wrapper.insertBefore(notification, wrapper.firstChild);
+        setTimeout(() => notification.remove(), 4000);
+    }
+    
+    // Init
+    window.onload = function () {
+        setDefaultDates();
+        updatePrice();
+    };
+</script>
+
+{% endblock %}
